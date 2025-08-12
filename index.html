@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Book Management System</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+
+  <!-- Home Screen -->
+  <div id="home" class="page">
+    <h1 class="main-title">📖 Book Management System</h1>
+    <div class="menu-container">
+      <div class="menu-card" onclick="showPage('addBookPage')">
+        <i class="fas fa-plus-circle"></i>
+        <p>Add Book</p>
+      </div>
+      <div class="menu-card" onclick="showPage('viewBooksPage')">
+        <i class="fas fa-book-open"></i>
+        <p>View Books</p>
+      </div>
+      <div class="menu-card" onclick="showPage('deleteBookPage')">
+        <i class="fas fa-trash-alt"></i>
+        <p>Delete Book</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Book Page -->
+  <div id="addBookPage" class="page hidden">
+    <button class="back-btn" onclick="showPage('home')">⬅ Back</button>
+    <h2>Add a New Book</h2>
+    <form id="bookForm">
+      <label>Title:</label>
+      <input type="text" id="title" required>
+      <label>Author:</label>
+      <input type="text" id="author" required>
+      <label>ISBN:</label>
+      <input type="text" id="isbn" required>
+      <label>Publication Date:</label>
+      <input type="date" id="pubDate" required>
+      <label>Genre:</label>
+      <select id="genre" required>
+        <option value="">Select Genre</option>
+        <option value="fiction">Fiction</option>
+        <option value="science">Science</option>
+        <option value="history">History</option>
+        <option value="biography">Biography</option>
+        <option value="technology">Technology</option>
+        <option value="romance">Romance</option>
+      </select>
+      <button type="submit">Add Book</button>
+    </form>
+  </div>
+
+  <!-- View Books Page -->
+  <div id="viewBooksPage" class="page hidden">
+    <button class="back-btn" onclick="showPage('home')">⬅ Back</button>
+    <h2>Book List</h2>
+    <div id="bookCardsContainer" class="book-cards-container"></div>
+  </div>
+
+  <!-- Delete Books Page -->
+  <div id="deleteBookPage" class="page hidden">
+    <button class="back-btn" onclick="showPage('home')">⬅ Back</button>
+    <h2>Delete Books</h2>
+    <ul id="deleteList"></ul>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

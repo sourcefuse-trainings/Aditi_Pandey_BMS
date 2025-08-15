@@ -68,7 +68,7 @@ document.getElementById('bookForm').addEventListener('submit', (e) => {
 function renderBooks() {
   const container = document.getElementById('bookCardsContainer');
   container.innerHTML = '';
-  
+
   books.forEach((book, i) => {
     const genreClass = `genre-${book.genre.toLowerCase()}` || 'genre-general';
     const card = document.createElement('div');
@@ -114,4 +114,106 @@ function editBook(index) {
   document.getElementById('pubDate').value = book.pubDate;
   document.getElementById('genre').value = book.genre;
   books.splice(index, 1);
+}
+
+/* -------------------------------
+   NEW ASYNCHRONOUS FETCHING LOGIC
+---------------------------------*/
+
+// Fetch data from external API
+// JS
+const loadingSpinner = document.getElementById("loadingSpinner");
+const errorContainer = document.getElementById("errorContainer");
+const bookCardsContainer = document.getElementById("bookCardsContainer");
+const fetchApiBtn = document.getElementById("fetchApiBtn");
+
+async function fetchExternalBooks() {
+  const url = `https://jsonplaceholder.typicode.com/posts?_limit=3&_=${Date.now()}`; // cache-busting param
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+  const data = await response.json();
+  return data.map(post => ({
+    title: post.title,
+    author: `User ${post.userId}`,
+    isbn: `123${post.id}`,
+    pubDate: "2020-01-01",
+    genre: "General",
+    age: calculateAge("2020-01-01"),
+    category: "General"
+  }));
+}
+
+async function loadBooksAsync() {
+  // UI state: show spinner, hide error
+  loadingSpinner.classList.remove("hidden");
+  errorContainer.classList.add("hidden");
+  bookCardsContainer.innerHTML = "";
+
+  try {
+    const externalBooks = await fetchExternalBooks();
+    books = [...books, ...externalBooks];
+    renderBooks();
+  } catch (error) {
+    errorContainer.textContent = `Failed to load books: ${error.message}`;
+    errorContainer.classList.remove("hidden");
+  } finally {
+    loadingSpinner.classList.add("hidden");
+  }
+}
+
+fetchApiBtn.addEventListener("click", loadBooksAsync);
+
+
+// Search/filter books asynchronously
+function attachSearchHandler() {
+  const searchInput = document.getElementById("searchInput");
+  if (!searchInput) return;
+
+  searchInput.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase();
+    const filtered = books.filter(book =>
+      book.title.toLowerCase().includes(query) ||
+      book.author.toLowerCase().includes(query)
+    );
+    const container = document.getElementById('bookCardsContainer');
+    container.innerHTML = '';
+    filtered.forEach((book, i) => {
+      const card = document.createElement('div');
+      card.className = 'book-card';
+      card.innerHTML = `
+        <div>
+          <h3>${book.title}</h3>
+          <p><strong>Author:</strong> ${book.author}</p>
+          <p><strong>ISBN:</strong> ${book.isbn}</p>
+          <p><strong>Age:</strong> ${book.age}</p>
+          <span class="genre-tag genre-${book.genre.toLowerCase()}">${book.genre}</span>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  });
+}
+
+// Attach search when DOM loads
+document.addEventListener("DOMContentLoaded", () => {
+  attachSearchHandler();
+
+  // When user clicks Fetch from API
+  const fetchBtn = document.getElementById("fetchApiBtn");
+  if (fetchBtn) {
+    fetchBtn.addEventListener("click", loadBooksAsync);
+  }
+});
+
+function showError(message) {
+  const errorContainer = document.getElementById("errorContainer");
+  if (!errorContainer) return;
+  errorContainer.textContent = message;
+  errorContainer.classList.remove("hidden");
+
+  // Hide after 5 seconds
+  setTimeout(() => {
+    errorContainer.classList.add("hidden");
+  }, 5000);
 }

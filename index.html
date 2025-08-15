@@ -60,6 +60,23 @@
   <div id="viewBooksPage" class="page hidden">
     <button class="back-btn" onclick="showPage('home')">⬅ Back</button>
     <h2>Book List</h2>
+
+    <!-- 🔹 NEW: Search and fetch controls -->
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search by title or author">
+      <button id="fetchApiBtn">Fetch from API</button>
+    </div>
+
+    <!-- 🔹 Loading Spinner -->
+    <div id="loadingSpinner" class="loading-spinner hidden">
+      <div class="spinner"></div>
+      <p>Loading books...</p>
+    </div>
+
+
+    <!-- 🔹 NEW: Error display -->
+    <div id="errorContainer" class="error-message hidden"></div>
+
     <div id="bookCardsContainer" class="book-cards-container"></div>
   </div>
 

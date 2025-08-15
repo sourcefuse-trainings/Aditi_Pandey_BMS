@@ -247,3 +247,95 @@ form button:hover {
 #deleteList button:hover {
   background: #e55353;
 }
+
+/* 🔹 Controls container */
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+/* 🔹 Search input */
+#searchInput {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+#searchInput:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+/* 🔹 Fetch API button */
+#fetchApiBtn {
+  padding: 8px 14px;
+  background-color: #007bff;
+  color: white;
+  font-size: 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#fetchApiBtn:hover {
+  background-color: #0056b3;
+}
+
+/* 🔹 Error message styling */
+.error-message {
+  background-color: #f8d7da;
+  color: #842029;
+  padding: 10px 12px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid #f5c2c7;
+  font-size: 14px;
+}
+
+.error-message.hidden {
+  display: none;
+}
+
+/* 🔹 Spinner Container */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.loading-spinner.hidden {
+  display: none;
+}
+
+/* 🔹 The actual spinner animation */
+.spinner {
+  border: 4px solid #f3f3f3; /* Light gray */
+  border-top: 4px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+/* 🔹 Spin animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Optional text style */
+.loading-spinner p {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #555;
+}

@@ -10,7 +10,27 @@ function showPage(pageId) {
 
 // Calculate book age
 const calculateAge = (pubDate) => {
-  return Math.max(0, new Date().getFullYear() - new Date(pubDate).getFullYear());
+  const publication = new Date(pubDate);
+  const today = new Date();
+
+  let years = today.getFullYear() - publication.getFullYear();
+  let months = today.getMonth() - publication.getMonth();
+  let days = today.getDate() - publication.getDate();
+
+  // Adjust if days are negative
+  if (days < 0) {
+    months--;
+    const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += prevMonth.getDate();
+  }
+
+  // Adjust if months are negative
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  return `${years} years ${months} months ${days} days`;
 };
 
 // Categorize by genre
@@ -58,7 +78,7 @@ function renderBooks() {
         <h3>${book.title}</h3>
         <p><strong>Author:</strong> ${book.author}</p>
         <p><strong>ISBN:</strong> ${book.isbn}</p>
-        <p><strong>Age:</strong> ${book.age} yrs</p>
+        <p><strong>Age:</strong> ${book.age}</p>
         <span class="genre-tag ${genreClass}">${book.genre}</span>
       </div>
       <button onclick="editBook(${i})">Edit</button>

@@ -72,17 +72,23 @@ function renderBooks() {
   books.forEach((book, i) => {
     const genreClass = `genre-${book.genre.toLowerCase()}` || 'genre-general';
     const card = document.createElement('div');
-    card.className = 'book-card';
+    card.className =
+      "p-6 rounded-lg bg-white/10 backdrop-blur-xl border border-white/20 shadow-md text-white flex flex-col justify-between hover:scale-[1.02] transition-transform";
+
     card.innerHTML = `
-      <div>
-        <h3>${book.title}</h3>
-        <p><strong>Author:</strong> ${book.author}</p>
-        <p><strong>ISBN:</strong> ${book.isbn}</p>
-        <p><strong>Age:</strong> ${book.age}</p>
-        <span class="genre-tag ${genreClass}">${book.genre}</span>
-      </div>
-      <button onclick="editBook(${i})">Edit</button>
-    `;
+  <div class="space-y-2">
+    <h3 class="text-xl font-bold">${book.title}</h3>
+    <p><span class="font-semibold">Author:</span> ${book.author}</p>
+    <p><span class="font-semibold">ISBN:</span> ${book.isbn}</p>
+    <p><span class="font-semibold">Age:</span> ${book.age}</p>
+    <span class="inline-block mt-2 px-3 py-1 rounded-full text-sm bg-gradient-accent text-white shadow">${book.genre}</span>
+  </div>
+  <button onclick="editBook(${i})"
+    class="mt-4 px-4 py-2 rounded-md bg-gradient-primary text-white font-medium shadow hover:shadow-lg hover:scale-105 transition-all">
+    ✏ Edit
+  </button>
+`;
+
     container.appendChild(card);
   });
 }
@@ -93,7 +99,16 @@ function renderDeleteList() {
   list.innerHTML = '';
   books.forEach((book, i) => {
     const li = document.createElement('li');
-    li.innerHTML = `${book.title} - ${book.author} <button onclick="deleteBook(${i})">Delete</button>`;
+    li.className =
+      "flex justify-between items-center p-4 rounded-md bg-white/10 border border-white/20 text-white";
+    li.innerHTML = `
+  <span>${book.title} - ${book.author}</span>
+  <button onclick="deleteBook(${i})"
+    class="px-3 py-1 rounded bg-gradient-danger text-white shadow hover:scale-105 transition-all">
+    🗑 Delete
+  </button>
+`;
+
     list.appendChild(li);
   });
 }
@@ -180,16 +195,22 @@ function attachSearchHandler() {
     container.innerHTML = '';
     filtered.forEach((book, i) => {
       const card = document.createElement('div');
-      card.className = 'book-card';
+      card.className =
+        "p-6 rounded-lg bg-white/10 backdrop-blur-xl border border-white/20 shadow-md text-white flex flex-col justify-between hover:scale-[1.02] transition-transform";
+
       card.innerHTML = `
-        <div>
-          <h3>${book.title}</h3>
-          <p><strong>Author:</strong> ${book.author}</p>
-          <p><strong>ISBN:</strong> ${book.isbn}</p>
-          <p><strong>Age:</strong> ${book.age}</p>
-          <span class="genre-tag genre-${book.genre.toLowerCase()}">${book.genre}</span>
-        </div>
-      `;
+  <div class="space-y-2">
+    <h3 class="text-xl font-bold">${book.title}</h3>
+    <p><span class="font-semibold">Author:</span> ${book.author}</p>
+    <p><span class="font-semibold">ISBN:</span> ${book.isbn}</p>
+    <p><span class="font-semibold">Age:</span> ${book.age}</p>
+    <span class="inline-block mt-2 px-3 py-1 rounded-full text-sm bg-gradient-accent text-white shadow">${book.genre}</span>
+  </div>
+  <button onclick="editBook(${i})"
+    class="mt-4 px-4 py-2 rounded-md bg-gradient-primary text-white font-medium shadow hover:shadow-lg hover:scale-105 transition-all">
+    ✏ Edit
+  </button>
+`;
       container.appendChild(card);
     });
   });

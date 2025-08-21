@@ -111,26 +111,34 @@
     <button onclick="showPage('home')"
       class="back-btn text-white text-base px-3 py-2 rounded-md mb-6 transition-all hover:bg-white/10 hover:-translate-x-1">⬅
       Back</button>
-    <h2 id="formTitle"
-      class="text-white text-2xl font-bold text-center mb-8 relative after:content-['📚'] after:ml-2">
-      Add a New Book
+    <h2 class="text-white text-2xl font-bold text-center mb-8 relative after:content-['📚'] after:ml-2">Add a New Book
     </h2>
     <form id="bookForm" class="grid gap-6">
       <label class="text-white font-medium">Title:</label>
-      <input type="text" id="title" required
+      <input type="text" id="title" placeholder="Enter Book Title" required
         class="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
       <label class="text-white font-medium">Author:</label>
-      <input type="text" id="author" required
+      <input type="text" id="author" placeholder="Enter Author Name" required
         class="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
       <label class="text-white font-medium">ISBN:</label>
-      <input type="text" id="isbn" required
+      <input type="text" id="isbn" placeholder="Enter ISBN number" required
         class="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
       <label class="text-white font-medium">Publication Date:</label>
-      <input type="date" id="pubDate" required
+      <input type="text" id="pubDate" placeholder="Select Date" required
         class="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+      <script>
+        flatpickr("#pubDate", {
+          dateFormat: "Y-m-d",
+          position: "auto right"
+        });
+      </script>
       <label class="text-white font-medium">Genre:</label>
-      <select id="genre" required
-        class="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
+      <select id="genre" required class="w-full px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white 
+         focus:outline-none focus:border-white/40 focus:bg-white/20 
+         focus:ring-2 focus:ring-white/20 transition-all 
+         appearance-none">
         <option value="">Select Genre</option>
         <option value="fiction">Fiction</option>
         <option value="science">Science</option>
@@ -139,6 +147,7 @@
         <option value="technology">Technology</option>
         <option value="romance">Romance</option>
       </select>
+
       <button type="submit"
         class="relative mt-4 px-6 py-3 rounded-md bg-gradient-primary text-white font-semibold shadow-md transition-all hover:scale-105 hover:shadow-xl"
         id="submitBtn">

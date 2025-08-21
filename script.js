@@ -1,14 +1,15 @@
 let books = [];
+let editingIndex = null; // Track which book is being edited
 
-// Show page function
+// Show page
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
   document.getElementById(pageId).classList.remove('hidden');
-  if (pageId === 'viewBooksPage') renderBooks();
+  if (pageId === 'viewBooksPage') applyFiltersAndSort();
   if (pageId === 'deleteBookPage') renderDeleteList();
 }
 
-// Calculate book age
+// Calculate age
 const calculateAge = (pubDate) => {
   const publication = new Date(pubDate);
   const today = new Date();
@@ -17,23 +18,19 @@ const calculateAge = (pubDate) => {
   let months = today.getMonth() - publication.getMonth();
   let days = today.getDate() - publication.getDate();
 
-  // Adjust if days are negative
   if (days < 0) {
     months--;
     const prevMonth = new Date(today.getFullYear(), today.getMonth(), 0);
     days += prevMonth.getDate();
   }
-
-  // Adjust if months are negative
   if (months < 0) {
     years--;
     months += 12;
   }
-
   return `${years} years ${months} months ${days} days`;
 };
 
-// Categorize by genre
+// Genre mapping
 const categorizeGenre = (genre) => {
   const categories = {
     fiction: 'Entertainment',
@@ -46,7 +43,7 @@ const categorizeGenre = (genre) => {
   return categories[genre.toLowerCase()] || 'General';
 };
 
-// Handle Add Book
+// Add/Edit Book handler
 document.getElementById('bookForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const title = document.getElementById('title').value.trim();
@@ -59,41 +56,65 @@ document.getElementById('bookForm').addEventListener('submit', (e) => {
   if (isNaN(isbn)) return alert('ISBN must be numeric!');
 
   const book = { title, author, isbn, pubDate, genre, age: calculateAge(pubDate), category: categorizeGenre(genre) };
-  books.push(book);
+
+  if (editingIndex !== null) {
+    books[editingIndex] = book;
+    editingIndex = null;
+    document.getElementById('formTitle').textContent = "Add a New Book";
+    document.getElementById('submitBtn').textContent = "Add Book";
+  } else {
+    books.push(book);
+  }
+
   e.target.reset();
-  alert('Book added!');
+  alert('Book saved!');
+  applyFiltersAndSort();
+  showPage('viewBooksPage');
 });
 
-// Render View Books
-function renderBooks() {
+// Render Books
+function renderFilteredBooks(filteredBooks) {
   const container = document.getElementById('bookCardsContainer');
   container.innerHTML = '';
 
-  books.forEach((book, i) => {
-    const genreClass = `genre-${book.genre.toLowerCase()}` || 'genre-general';
+  filteredBooks.forEach((book, i) => {
     const card = document.createElement('div');
     card.className =
       "p-6 rounded-lg bg-white/10 backdrop-blur-xl border border-white/20 shadow-md text-white flex flex-col justify-between hover:scale-[1.02] transition-transform";
 
     card.innerHTML = `
-  <div class="space-y-2">
-    <h3 class="text-xl font-bold">${book.title}</h3>
-    <p><span class="font-semibold">Author:</span> ${book.author}</p>
-    <p><span class="font-semibold">ISBN:</span> ${book.isbn}</p>
-    <p><span class="font-semibold">Age:</span> ${book.age}</p>
-    <span class="inline-block mt-2 px-3 py-1 rounded-full text-sm bg-gradient-accent text-white shadow">${book.genre}</span>
-  </div>
-  <button onclick="editBook(${i})"
-    class="mt-4 px-4 py-2 rounded-md bg-gradient-primary text-white font-medium shadow hover:shadow-lg hover:scale-105 transition-all">
-    ✏ Edit
-  </button>
-`;
-
+      <div class="space-y-2">
+        <h3 class="text-xl font-bold">${book.title}</h3>
+        <p><span class="font-semibold">Author:</span> ${book.author}</p>
+        <p><span class="font-semibold">ISBN:</span> ${book.isbn}</p>
+        <p><span class="font-semibold">Age:</span> ${book.age}</p>
+        <span class="inline-block mt-2 px-3 py-1 rounded-full text-sm bg-gradient-accent text-white shadow">${book.genre}</span>
+      </div>
+      <button onclick="editBook(${i})"
+        class="mt-4 px-4 py-2 rounded-md bg-gradient-primary text-white font-medium shadow hover:shadow-lg hover:scale-105 transition-all">
+        ✏ Edit
+      </button>
+    `;
     container.appendChild(card);
   });
 }
 
-// Render Delete List
+// Apply filters
+function applyFiltersAndSort() {
+  const searchQuery = document.getElementById("searchInput")?.value.toLowerCase() || "";
+  const genreQuery = document.getElementById("filterGenre")?.value.toLowerCase() || "";
+
+  let filteredBooks = books.filter(book => {
+    const matchesSearch = book.title.toLowerCase().includes(searchQuery) || book.author.toLowerCase().includes(searchQuery);
+    const matchesGenre = genreQuery ? book.genre.toLowerCase() === genreQuery : true;
+    return matchesSearch && matchesGenre;
+  });
+
+  filteredBooks.sort((a, b) => a.title.localeCompare(b.title));
+  renderFilteredBooks(filteredBooks);
+}
+
+// Delete List
 function renderDeleteList() {
   const list = document.getElementById('deleteList');
   list.innerHTML = '';
@@ -102,48 +123,51 @@ function renderDeleteList() {
     li.className =
       "flex justify-between items-center p-4 rounded-md bg-white/10 border border-white/20 text-white";
     li.innerHTML = `
-  <span>${book.title} - ${book.author}</span>
-  <button onclick="deleteBook(${i})"
-    class="px-3 py-1 rounded bg-gradient-danger text-white shadow hover:scale-105 transition-all">
-    🗑 Delete
-  </button>
-`;
-
+      <span>${book.title} - ${book.author}</span>
+      <button onclick="deleteBook(${i})"
+        class="px-3 py-1 rounded bg-gradient-danger text-white shadow hover:scale-105 transition-all">
+        🗑 Delete
+      </button>
+    `;
     list.appendChild(li);
   });
 }
 
-// Delete Book
+// Delete book
 function deleteBook(index) {
   books.splice(index, 1);
   renderDeleteList();
+  applyFiltersAndSort();
 }
 
 // Edit Book
 function editBook(index) {
   const book = books[index];
-  showPage('addBookPage');
+  editingIndex = index;
+
   document.getElementById('title').value = book.title;
   document.getElementById('author').value = book.author;
   document.getElementById('isbn').value = book.isbn;
   document.getElementById('pubDate').value = book.pubDate;
   document.getElementById('genre').value = book.genre;
-  books.splice(index, 1);
+
+  document.getElementById('formTitle').textContent = "Edit Book";
+  document.getElementById('submitBtn').textContent = "Save Changes";
+
+  showPage('addBookPage');
 }
 
 /* -------------------------------
-   NEW ASYNCHRONOUS FETCHING LOGIC
+   Fetch Books from API
 ---------------------------------*/
 
-// Fetch data from external API
-// JS
 const loadingSpinner = document.getElementById("loadingSpinner");
 const errorContainer = document.getElementById("errorContainer");
 const bookCardsContainer = document.getElementById("bookCardsContainer");
 const fetchApiBtn = document.getElementById("fetchApiBtn");
 
 async function fetchExternalBooks() {
-  const url = `https://jsonplaceholder.typicode.com/posts?_limit=3&_=${Date.now()}`; // cache-busting param
+  const url = `https://jsonplaceholder.typicode.com/posts?_limit=3&_=${Date.now()}`;
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
@@ -153,14 +177,13 @@ async function fetchExternalBooks() {
     author: `User ${post.userId}`,
     isbn: `123${post.id}`,
     pubDate: "2020-01-01",
-    genre: "General",
+    genre: "general",
     age: calculateAge("2020-01-01"),
-    category: "General"
+    category: "general"
   }));
 }
 
 async function loadBooksAsync() {
-  // UI state: show spinner, hide error
   loadingSpinner.classList.remove("hidden");
   errorContainer.classList.add("hidden");
   bookCardsContainer.innerHTML = "";
@@ -168,7 +191,7 @@ async function loadBooksAsync() {
   try {
     const externalBooks = await fetchExternalBooks();
     books = [...books, ...externalBooks];
-    renderBooks();
+    applyFiltersAndSort();
   } catch (error) {
     errorContainer.textContent = `Failed to load books: ${error.message}`;
     errorContainer.classList.remove("hidden");
@@ -179,62 +202,8 @@ async function loadBooksAsync() {
 
 fetchApiBtn.addEventListener("click", loadBooksAsync);
 
-
-// Search/filter books asynchronously
-function attachSearchHandler() {
-  const searchInput = document.getElementById("searchInput");
-  if (!searchInput) return;
-
-  searchInput.addEventListener("input", (e) => {
-    const query = e.target.value.toLowerCase();
-    const filtered = books.filter(book =>
-      book.title.toLowerCase().includes(query) ||
-      book.author.toLowerCase().includes(query)
-    );
-    const container = document.getElementById('bookCardsContainer');
-    container.innerHTML = '';
-    filtered.forEach((book, i) => {
-      const card = document.createElement('div');
-      card.className =
-        "p-6 rounded-lg bg-white/10 backdrop-blur-xl border border-white/20 shadow-md text-white flex flex-col justify-between hover:scale-[1.02] transition-transform";
-
-      card.innerHTML = `
-  <div class="space-y-2">
-    <h3 class="text-xl font-bold">${book.title}</h3>
-    <p><span class="font-semibold">Author:</span> ${book.author}</p>
-    <p><span class="font-semibold">ISBN:</span> ${book.isbn}</p>
-    <p><span class="font-semibold">Age:</span> ${book.age}</p>
-    <span class="inline-block mt-2 px-3 py-1 rounded-full text-sm bg-gradient-accent text-white shadow">${book.genre}</span>
-  </div>
-  <button onclick="editBook(${i})"
-    class="mt-4 px-4 py-2 rounded-md bg-gradient-primary text-white font-medium shadow hover:shadow-lg hover:scale-105 transition-all">
-    ✏ Edit
-  </button>
-`;
-      container.appendChild(card);
-    });
-  });
-}
-
-// Attach search when DOM loads
+// Filters
 document.addEventListener("DOMContentLoaded", () => {
-  attachSearchHandler();
-
-  // When user clicks Fetch from API
-  const fetchBtn = document.getElementById("fetchApiBtn");
-  if (fetchBtn) {
-    fetchBtn.addEventListener("click", loadBooksAsync);
-  }
+  document.getElementById("filterGenre")?.addEventListener("change", applyFiltersAndSort);
+  document.getElementById("searchInput")?.addEventListener("input", applyFiltersAndSort);
 });
-
-function showError(message) {
-  const errorContainer = document.getElementById("errorContainer");
-  if (!errorContainer) return;
-  errorContainer.textContent = message;
-  errorContainer.classList.remove("hidden");
-
-  // Hide after 5 seconds
-  setTimeout(() => {
-    errorContainer.classList.add("hidden");
-  }, 5000);
-}

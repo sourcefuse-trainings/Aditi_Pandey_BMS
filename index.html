@@ -4,8 +4,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Book Management System</title>
-  <!-- <link rel="stylesheet" href="styles.css"> -->
-  <!-- Tailwind Config Above -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -107,13 +105,15 @@
     </div>
   </div>
 
-  <!-- Add Book Page -->
+  <!-- Add/Edit Book Page -->
   <div id="addBookPage"
     class="page hidden bg-white/10 backdrop-blur-xl border border-white/20 rounded-lg shadow-glass p-10 w-[min(800px,95vw)] animate-slideInUp relative">
     <button onclick="showPage('home')"
       class="back-btn text-white text-base px-3 py-2 rounded-md mb-6 transition-all hover:bg-white/10 hover:-translate-x-1">⬅
       Back</button>
-    <h2 class="text-white text-2xl font-bold text-center mb-8 relative after:content-['📚'] after:ml-2">Add a New Book
+    <h2 id="formTitle"
+      class="text-white text-2xl font-bold text-center mb-8 relative after:content-['📚'] after:ml-2">
+      Add a New Book
     </h2>
     <form id="bookForm" class="grid gap-6">
       <label class="text-white font-medium">Title:</label>
@@ -140,8 +140,10 @@
         <option value="romance">Romance</option>
       </select>
       <button type="submit"
-        class="relative mt-4 px-6 py-3 rounded-md bg-gradient-primary text-white font-semibold shadow-md transition-all hover:scale-105 hover:shadow-xl">Add
-        Book</button>
+        class="relative mt-4 px-6 py-3 rounded-md bg-gradient-primary text-white font-semibold shadow-md transition-all hover:scale-105 hover:shadow-xl"
+        id="submitBtn">
+        Add Book
+      </button>
     </form>
   </div>
 
@@ -156,23 +158,34 @@
     <div class="controls flex flex-wrap gap-4 mb-6">
       <input id="searchInput" type="text" placeholder="Search by title or author"
         class="flex-1 min-w-[250px] px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
+
+      <select id="filterGenre"
+        class="px-4 py-3 rounded-md bg-white/10 border border-white/20 text-white focus:outline-none focus:border-white/40 focus:bg-white/20 focus:ring-2 focus:ring-white/20 transition-all">
+        <option value="">All Genres</option>
+        <option value="fiction">Fiction</option>
+        <option value="science">Science</option>
+        <option value="history">History</option>
+        <option value="biography">Biography</option>
+        <option value="technology">Technology</option>
+        <option value="romance">Romance</option>
+        <option value="general">General</option>
+      </select>
+
       <button id="fetchApiBtn"
-        class="px-6 py-3 bg-gradient-accent text-white font-medium rounded-md shadow-md transition-transform hover:scale-105">Fetch
-        from API</button>
+        class="px-6 py-3 bg-gradient-accent text-white font-medium rounded-md shadow-md transition-transform hover:scale-105">
+        Fetch from API
+      </button>
     </div>
 
-    <!-- Spinner -->
     <div id="loadingSpinner" class="loading-spinner hidden flex flex-col items-center gap-4 py-8">
       <div class="spinner w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
       <p class="text-white/80">Loading books...</p>
     </div>
 
-    <!-- Error -->
     <div id="errorContainer"
       class="error-message hidden bg-red-500/20 text-red-400 p-4 rounded-md border border-red-500/30 backdrop-blur-md">
     </div>
 
-    <!-- Books -->
     <div id="bookCardsContainer" class="book-cards-container grid gap-6 mt-6 grid-cols-1 md:grid-cols-2"></div>
   </div>
 

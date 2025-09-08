@@ -1,0 +1,27 @@
+{
+  "name": "book-management-",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aditipandey-sys/Book-Management-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aditipandey-sys/Book-Management-/issues"
+  },
+  "homepage": "https://github.com/aditipandey-sys/Book-Management-#readme",
+  "devDependencies": {
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "tailwind": "^4.0.0"
+  }
+}

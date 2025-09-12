@@ -20,5 +20,8 @@
   "homepage": "https://github.com/aditipandey-sys/Book-Management-#readme",
   "devDependencies": {
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "tailwind": "^4.0.0"
   }
 }

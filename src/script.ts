@@ -4,7 +4,7 @@
 // ============================================================================
 // This script implements a simple client-side book manager. 
 // It demonstrates TypeScript interfaces, decorators, DOM interaction, 
-// logging utilities, async API integration, and adherence to SOLID principles.
+// logging utilities, async API integration, and SOLID principles in practice.
 // ============================================================================
 
 
@@ -18,8 +18,8 @@
  * genre, age (calculated), and category (derived).
  *
  * SOLID:
- * - Interface Segregation Principle (ISP): Keeps a small, clean contract 
- *   for book objects.
+ * - ISP (Interface Segregation Principle): Keeps a small, clean contract 
+ *   for book objects only.
  */
 interface Book {
   title: string;
@@ -32,12 +32,23 @@ interface Book {
 }
 
 /**
+ * Strategy interface for categorizing genres.
+ *
+ * SOLID:
+ * - OCP (Open/Closed Principle): We can add new genre strategies by 
+ *   creating new classes without modifying existing ones.
+ */
+interface GenreStrategy {
+  categorize(genre: string): string;
+}
+
+/**
  * Extends the browser Window object to include our custom 
  * global functions. This allows inline HTML `onclick` handlers
  * to call class methods safely, while preserving type safety.
  *
  * SOLID:
- * - Single Responsibility Principle (SRP): Keeps type declarations separate.
+ * - SRP (Single Responsibility Principle): Keeps type declarations separate.
  */
 type CustomWindow = Window & typeof globalThis & {
   editBook: (index: number) => void;
@@ -51,43 +62,34 @@ type CustomWindow = Window & typeof globalThis & {
    ============================================================================ */
 
 /**
- * Logger is a utility class that provides styled console logging
- * with timestamps. It has three main methods: info, success, error.
+ * Logger handles all logging concerns with styling and timestamps.
  *
  * SOLID:
- * - SRP: Dedicated solely to logging (not mixed with business logic).
- * - Open/Closed Principle (OCP): Can be extended (e.g., add file logging)
- *   without modifying existing methods.
+ * - SRP: Dedicated solely to logging.
+ * - OCP: Can be extended (e.g., FileLogger) without changing this class.
+ * - DIP: Higher-level modules depend on this abstraction instead of console.
  */
 class Logger {
-  /** Generates an ISO timestamp string */
   private getTimestamp(): string {
     return new Date().toISOString();
   }
 
-  /**
-   * Internal method to apply CSS styling to log messages.
-   * Returns tuple: [formatted message, css].
-   */
   private colorize(message: string, color: string): [string, string] {
     const css = `color: ${color}; font-weight: bold;`;
     const plainText = `[${this.getTimestamp()}] ${message}`;
     return [plainText, css];
   }
 
-  /** Logs info messages in blue. */
   public info(message: string): void {
     const [plainText, css] = this.colorize(`INFO: ${message}`, 'deepskyblue');
     console.log(`%c${plainText}`, css);
   }
   
-  /** Logs success messages in green. */
   public success(message: string): void {
     const [plainText, css] = this.colorize(`SUCCESS: ${message}`, 'mediumseagreen');
     console.log(`%c${plainText}`, css);
   }
 
-  /** Logs error messages in red, optionally with an error object. */
   public error(message: string, errorObj?: any): void {
     const errorMessage = errorObj ? `${message} - ${errorObj.message}` : message;
     const [plainText, css] = this.colorize(`ERROR: ${errorMessage}`, 'crimson');
@@ -97,17 +99,87 @@ class Logger {
 
 
 /* ============================================================================
-   3. METHOD DECORATOR
+   3. GENRE STRATEGY CLASSES (OCP DEMO)
+// ============================================================================ */
+
+/**
+ * Each strategy implements `GenreStrategy` and defines its own category.
+ * This makes the system extensible without modifying BookManager.
+ */
+class FictionGenre implements GenreStrategy {
+  categorize(): string {
+    return "Entertainment";
+  }
+}
+
+class ScienceGenre implements GenreStrategy {
+  categorize(): string {
+    return "Educational";
+  }
+}
+
+class HistoryGenre implements GenreStrategy {
+  categorize(): string {
+    return "Informational";
+  }
+}
+
+class BiographyGenre implements GenreStrategy {
+  categorize(): string {
+    return "Inspirational";
+  }
+}
+
+class TechnologyGenre implements GenreStrategy {
+  categorize(): string {
+    return "Technical";
+  }
+}
+
+class RomanceGenre implements GenreStrategy {
+  categorize(): string {
+    return "Emotional";
+  }
+}
+
+class DefaultGenre implements GenreStrategy {
+  categorize(): string {
+    return "General";
+  }
+}
+
+/**
+ * GenreFactory chooses the right strategy based on genre string.
+ * 
+ * SOLID:
+ * - OCP: Add new genres by creating new strategy classes. No need to edit old ones.
+ * - LSP: All strategies can be substituted since they share `categorize`.
+ */
+class GenreFactory {
+  public static getStrategy(genre: string): GenreStrategy {
+    switch (genre.toLowerCase()) {
+      case "fiction": return new FictionGenre();
+      case "science": return new ScienceGenre();
+      case "history": return new HistoryGenre();
+      case "biography": return new BiographyGenre();
+      case "technology": return new TechnologyGenre();
+      case "romance": return new RomanceGenre();
+      default: return new DefaultGenre();
+    }
+  }
+}
+
+
+/* ============================================================================
+   4. METHOD DECORATOR
    ============================================================================ */
 
 /**
- * Decorator factory that logs when a method starts and finishes.
- * Useful for tracing method activity.
+ * Decorator factory that logs method start and finish.
  *
  * SOLID:
- * - Open/Closed Principle (OCP): Adds logging behavior without 
- *   changing the original method implementation.
- * - SRP: Keeps logging concern separate from business logic.
+ * - OCP: Adds logging without changing original methods.
+ * - SRP: Keeps logging separate from business logic.
  */
 function LogMethodActivity(logger: Logger) {
   return function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
@@ -125,28 +197,22 @@ function LogMethodActivity(logger: Logger) {
 
 
 /* ============================================================================
-   4. BOOK MANAGER CLASS
+   5. BOOK MANAGER CLASS
    ============================================================================ */
 
 /**
- * The BookManager class handles all core logic:
- * - Managing the book list (CRUD)
- * - Applying filters/sorting
- * - Rendering DOM views
- * - Fetching books from external API
+ * Manages all book operations and UI rendering.
  *
  * SOLID:
- * - SRP: A bit stretched — handles multiple concerns (UI, data, logic). 
- *   Ideally, UI rendering and data management would be separated.
- * - Liskov Substitution (LSP): Not directly applicable, but methods are 
- *   consistent and predictable in return types.
- * - Dependency Inversion (DIP): Depends on abstractions (Logger) instead of 
- *   raw console calls.
+ * - SRP: Handles book management; logging & genre classification are external.
+ * - OCP: Extensible genre system via GenreFactory.
+ * - LSP: Works with any GenreStrategy subclass.
+ * - DIP: Depends on abstractions (Logger, GenreStrategy) not raw logic.
  */
 class BookManager {
-  private books: Book[] = [];               // Stores all books
-  private editingIndex: number | null = null; // Tracks currently editing book
-  private readonly logger = new Logger();     // For structured logging
+  private books: Book[] = [];
+  private editingIndex: number | null = null;
+  private readonly logger = new Logger();
 
   constructor() {
     this.initEventListeners();
@@ -154,12 +220,6 @@ class BookManager {
     this.logger.info("BookManager initialized.");
   }
   
-  /**
-   * Utility: Safely query a DOM element by selector.
-   * Throws error if element not found.
-   *
-   * SRP: Dedicated solely to DOM selection.
-   */
   private getElement<T extends HTMLElement>(selector: string): T {
     const element = document.querySelector<T>(selector);
     if (!element) {
@@ -168,10 +228,6 @@ class BookManager {
     return element;
   }
   
-  /**
-   * Attaches selected class methods to the global window object,
-   * allowing inline HTML event handlers to work.
-   */
   private attachMethodsToWindow(): void {
     const customWindow = window as CustomWindow;
     customWindow.editBook = this.editBook.bind(this);
@@ -179,10 +235,6 @@ class BookManager {
     customWindow.showPage = this.showPage.bind(this);
   }
   
-  /**
-   * Shows a page by ID, hides all others.
-   * Handles additional rendering when switching pages.
-   */
   public showPage(pageId: string): void {
     document.querySelectorAll('.page').forEach(page => page.classList.add('hidden'));
     this.getElement(`#${pageId}`).classList.remove('hidden');
@@ -190,7 +242,6 @@ class BookManager {
     if (pageId === 'deleteBookPage') this.renderDeleteList();
   }
   
-  /** Calculates the age of a book since publication. */
   private calculateAge(pubDate: string): string {
     const publication = new Date(pubDate);
     const today = new Date();
@@ -211,22 +262,12 @@ class BookManager {
     return `${years} years ${months} months ${days} days`;
   }
   
-  /** Maps book genres to human-readable categories. */
+  /** Uses OCP-based GenreFactory instead of fixed mapping. */
   private categorizeGenre(genre: string): string {
-    const categories: { [key: string]: string } = {
-      fiction: 'Entertainment',
-      science: 'Educational',
-      history: 'Informational',
-      biography: 'Inspirational',
-      technology: 'Technical',
-      romance: 'Emotional'
-    };
-    return categories[genre.toLowerCase()] || 'General';
+    const strategy = GenreFactory.getStrategy(genre);
+    return strategy.categorize(genre);
   }
 
-  /**
-   * Renders a list of books as styled cards.
-   */
   private renderFilteredBooks(filteredBooks: Book[]): void {
     const bookCardsContainer = this.getElement<HTMLElement>("#bookCardsContainer");
     bookCardsContainer.innerHTML = '';
@@ -249,10 +290,6 @@ class BookManager {
     });
   }
 
-  /**
-   * Filters books by search/genre and sorts alphabetically.
-   * Decorated to log activity automatically.
-   */
   @LogMethodActivity(new Logger())
   public applyFiltersAndSort(): void {
     const searchQuery = this.getElement<HTMLInputElement>("#searchInput")?.value.toLowerCase() || "";
@@ -268,7 +305,6 @@ class BookManager {
     this.renderFilteredBooks(filteredBooks);
   }
 
-  /** Renders a list of books with delete buttons. */
   private renderDeleteList(): void {
     const list = this.getElement<HTMLUListElement>('#deleteList');
     list.innerHTML = '';
@@ -285,7 +321,6 @@ class BookManager {
     });
   }
 
-  /** Deletes a book from the list and refreshes views. */
   public deleteBook(index: number): void {
     const deletedBook = this.books[index];
     this.books.splice(index, 1);
@@ -294,7 +329,6 @@ class BookManager {
     this.applyFiltersAndSort();
   }
 
-  /** Loads book data into form for editing. */
   public editBook(index: number): void {
     const book = this.books[index];
     this.editingIndex = index;
@@ -311,7 +345,6 @@ class BookManager {
     this.showPage('addBookPage');
   }
 
-  /** Fetches external dummy books from JSONPlaceholder API. */
   private async fetchExternalBooks(): Promise<Book[]> {
     const url = `https://jsonplaceholder.typicode.com/posts?_limit=3&_=${Date.now()}`;
     const response = await fetch(url, { cache: "no-store" });
@@ -325,15 +358,10 @@ class BookManager {
       pubDate: "2020-01-01",
       genre: "general",
       age: this.calculateAge("2020-01-01"),
-      category: "general"
+      category: this.categorizeGenre("general")
     }));
   }
 
-  /**
-   * Loads external books into the app asynchronously.
-   * Shows a spinner, handles errors gracefully.
-   * Decorated for activity logging.
-   */
   @LogMethodActivity(new Logger())
   private async loadBooksAsync(): Promise<void> {
     const loadingSpinner = this.getElement<HTMLElement>("#loadingSpinner");
@@ -356,9 +384,7 @@ class BookManager {
     }
   }
   
-  /** Initializes all event listeners (form submission, buttons, filters). */
   private initEventListeners(): void {
-    // Handle book form submission
     this.getElement<HTMLFormElement>('#bookForm').addEventListener('submit', (e: Event) => {
       e.preventDefault();
       const title = this.getElement<HTMLInputElement>('#title').value.trim();
@@ -402,10 +428,8 @@ class BookManager {
       this.showPage('viewBooksPage');
     });
 
-    // Handle API fetch button
     this.getElement<HTMLButtonElement>("#fetchApiBtn").addEventListener("click", () => this.loadBooksAsync());
 
-    // Handle search + filter
     document.addEventListener("DOMContentLoaded", () => {
       this.getElement<HTMLSelectElement>("#filterGenre")?.addEventListener("change", () => this.applyFiltersAndSort());
       this.getElement<HTMLInputElement>("#searchInput")?.addEventListener("input", () => this.applyFiltersAndSort());
@@ -415,10 +439,10 @@ class BookManager {
 
 
 /* ============================================================================
-   5. APP INITIALIZATION
+   6. APP INITIALIZATION
    ============================================================================ */
 
 /**
  * Bootstraps the app by creating a new BookManager instance.
  */
-new BookManager();
+new BookManager(); 

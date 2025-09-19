@@ -1,11 +1,7 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlusCircle, faBookOpen, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
-import type { Page } from '../types';
-
-interface HomePageProps {
-  setPage: (page: Page) => void;
-}
 
 const MenuCard: React.FC<{ icon: any; text: string; onClick: () => void }> = ({ icon, text, onClick }) => (
   <div 
@@ -17,17 +13,18 @@ const MenuCard: React.FC<{ icon: any; text: string; onClick: () => void }> = ({ 
   </div>
 );
 
+const HomePage: React.FC = () => {
+  const navigate = useNavigate();
 
-const HomePage: React.FC<HomePageProps> = ({ setPage }) => {
   return (
     <div>
       <h1 className="main-title text-center mb-12 text-transparent font-extrabold tracking-tight bg-gradient-to-r from-white to-gray-100 bg-clip-text text-[clamp(2.5rem,5vw,4rem)] relative after:content-[''] after:absolute after:bottom-[-10px] after:left-1/2 after:-translate-x-1/2 after:w-[100px] after:h-[3px] after:rounded-sm after:bg-gradient-accent">
         📖 Book Management System
       </h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl w-full">
-        <MenuCard icon={faPlusCircle} text="Add Book" onClick={() => setPage('addBook')} />
-        <MenuCard icon={faBookOpen} text="View Books" onClick={() => setPage('viewBooks')} />
-        <MenuCard icon={faTrashAlt} text="Delete Book" onClick={() => setPage('deleteBook')} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <MenuCard icon={faPlusCircle} text="Add New Book" onClick={() => navigate('/add')} />
+        <MenuCard icon={faBookOpen} text="View All Books" onClick={() => navigate('/view')} />
+        <MenuCard icon={faTrashAlt} text="Delete a Book" onClick={() => navigate('/delete')} />
       </div>
     </div>
   );

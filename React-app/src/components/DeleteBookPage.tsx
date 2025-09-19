@@ -1,18 +1,20 @@
 import React from 'react';
-import type { Book, Page } from '../types';
+import { useNavigate } from 'react-router-dom';
+import type { Book } from '../types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 
 interface DeleteBookPageProps {
   books: Book[];
-  setPage: (page: Page) => void;
   deleteBook: (id: string) => void;
 }
 
-const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, setPage, deleteBook }) => {
+const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) => {
+  const navigate = useNavigate();
+
   return (
-    <div className="page-container">
-      <button onClick={() => setPage('home')} className="text-white/90 text-base px-3 py-2 rounded-md mb-6 transition-all hover:bg-white/10 hover:-translate-x-1">
+    <div className="page-container w-[min(700px,95vw)]">
+      <button onClick={() => navigate('/')} className="text-white/90 text-base px-3 py-2 rounded-md mb-6 transition-all hover:bg-white/10 hover:-translate-x-1">
         ⬅ Back
       </button>
       <h2 className="text-white text-3xl font-bold text-center mb-8 relative after:content-['🗑️'] after:ml-3">Delete Books</h2>
@@ -26,13 +28,14 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, setPage, deleteB
                 onClick={() => deleteBook(book.id)} 
                 className="px-3 py-1.5 rounded-md bg-gradient-danger text-white shadow-md hover:scale-105 transition-transform flex items-center gap-2"
               >
-                <FontAwesomeIcon icon={faTrashAlt} /> Delete
+                <FontAwesomeIcon icon={faTrashAlt} />
+                Delete
               </button>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-center text-white/70 mt-8">No books to delete.</p>
+        <p className="text-center text-white/70 mt-8">There are no books to delete.</p>
       )}
     </div>
   );

@@ -1,89 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import type { Book } from './types';
-import type { Page } from './types';
+import React, { useReducer, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import type { Book, AppState, Action } from './types';
 import { logger } from './utils/logger';
-
-// Import Page Components
+import { bookService } from './services/bookService';
 import PageAnimator from './components/PageAnimator';
-import HomePage from './components/HomePage';
-import AddBookPage from './components/AddBookPage';
-import ViewBooksPage from './components/ViewBooksPage';
-import DeleteBookPage from './components/DeleteBookPage';
 
-const initialBooks: Book[] = [
-    { id: '1', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', isbn: '9780743273565', pubDate: '1925-04-10', genre: 'fiction' },
-    { id: '2', title: 'A Brief History of Time', author: 'Stephen Hawking', isbn: '9780553380163', pubDate: '1988-03-01', genre: 'science' }
-];
+// Lazily import page components
+const HomePage = lazy(() => import('./components/HomePage'));
+const AddBookPage = lazy(() => import('./components/AddBookPage'));
+const ViewBooksPage = lazy(() => import('./components/ViewBooksPage'));
+const DeleteBookPage = lazy(() => import('./components/DeleteBookPage'));
 
-const App: React.FC = () => {
-  const [page, setPage] = useState<Page>('home');
-  const [books, setBooks] = useState<Book[]>(() => {
-      const savedBooks = localStorage.getItem('books');
-      return savedBooks ? JSON.parse(savedBooks) : initialBooks;
-  });
-  const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
+// The reducer is now simpler
+const appReducer = (state: AppState, action: Action): AppState => {
+  logger.info(`Action dispatched: ${action.type}`);
+  switch (action.type) {
+    case 'SET_BOOKS':
+      return { ...state, books: action.payload };
+    default:
+      return state;
+  }
+};
 
-  useEffect(() => {
-    localStorage.setItem('books', JSON.stringify(books));
-    logger.info(`${books.length} books saved to localStorage.`);
-  }, [books]);
+// A simple component to show while pages are loading
+const LoadingFallback: React.FC = () => (
+  <div className="flex justify-center items-center h-screen">
+    <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+  </div>
+);
 
-  const addBook = (book: Book) => {
-    setBooks(prev => [...prev, book]);
-    logger.success(`Book added: "${book.title}"`);
+// This component contains the app's state logic and routes
+const AppStateProvider: React.FC = () => {
+  const initialState: AppState = {
+    books: bookService.getBooks(),
   };
 
-  const updateBook = (updatedBook: Book) => {
-    setBooks(prev => prev.map(book => book.id === updatedBook.id ? updatedBook : book));
-    setBookToEdit(null);
-    logger.success(`Book updated: "${updatedBook.title}"`);
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  const navigate = useNavigate();
+
+  // Handler functions now use navigate for redirection
+  const handleAddBook = (book: Omit<Book, 'id'>) => {
+    const updatedBooks = bookService.addBook(book);
+    dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+    navigate('/view');
   };
 
-  const deleteBook = (id: string) => {
-    const bookToDelete = books.find(b => b.id === id);
-    if(bookToDelete && window.confirm(`Are you sure you want to delete "${bookToDelete.title}"?`)) {
-      setBooks(prev => prev.filter(book => book.id !== id));
-      logger.info(`Book deleted: "${bookToDelete.title}"`);
+  const handleUpdateBook = (updatedBook: Book) => {
+    const updatedBooks = bookService.updateBook(updatedBook);
+    dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+    navigate('/view');
+  };
+
+  const handleDeleteBook = (id: string) => {
+    const updatedBooks = bookService.deleteBook(id);
+    if (updatedBooks) {
+      dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
     }
   };
 
-  const addFetchedBooks = (fetchedBooks: Book[]) => {
-    const newBooks = fetchedBooks.filter(
-      fetchedBook => !books.some(existingBook => existingBook.title === fetchedBook.title)
-    );
-    setBooks(prevBooks => [...prevBooks, ...newBooks]);
-    logger.success(`Added ${newBooks.length} new books from API.`);
+  const handleAddFetchedBooks = (fetchedBooks: Book[]) => {
+    const updatedBooks = bookService.addFetchedBooks(state.books, fetchedBooks);
+    dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
   };
-
-  const navigateToPage = (targetPage: Page) => {
-      if (targetPage !== 'addBook') {
-          setBookToEdit(null);
-      }
-      setPage(targetPage);
-      logger.info(`Navigating to page: ${targetPage}`);
-  };
-
-  const renderPage = () => {
-    switch (page) {
-      case 'addBook':
-        return <AddBookPage setPage={navigateToPage} addBook={addBook} updateBook={updateBook} bookToEdit={bookToEdit} />;
-      case 'viewBooks':
-        return <ViewBooksPage books={books} setPage={navigateToPage} setBookToEdit={setBookToEdit} onBooksFetched={addFetchedBooks} />;
-      case 'deleteBook':
-        return <DeleteBookPage books={books} setPage={navigateToPage} deleteBook={deleteBook} />;
-      case 'home':
-      default:
-        return <HomePage setPage={navigateToPage} />;
-    }
-  };
-
+  
   return (
-    <div className="relative min-h-screen font-sans text-text-primary overflow-x-hidden bg-gradient-body flex justify-center items-start p-8">
-      <div className="fixed inset-0 z-[-1] animate-float
-        bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.3)_0%,transparent_50%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1)_0%,transparent_50%),radial-gradient(circle_at_40%_40%,rgba(120,119,198,0.2)_0%,transparent_50%)]"
-      ></div>
-      <PageAnimator>{renderPage()}</PageAnimator>
-    </div>
+    <Suspense fallback={<LoadingFallback />}>
+      <PageAnimator>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/view" element={<ViewBooksPage books={state.books} onBooksFetched={handleAddFetchedBooks} />} />
+          <Route path="/add" element={<AddBookPage books={state.books} addBook={handleAddBook} updateBook={handleUpdateBook} />} />
+          <Route path="/edit/:bookId" element={<AddBookPage books={state.books} addBook={handleAddBook} updateBook={handleUpdateBook} />} />
+          <Route path="/delete" element={<DeleteBookPage books={state.books} deleteBook={handleDeleteBook} />} />
+        </Routes>
+      </PageAnimator>
+    </Suspense>
+  );
+};
+
+// The main App component sets up the Router
+const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <div className="relative min-h-screen font-sans text-text-primary overflow-x-hidden bg-gradient-body flex justify-center items-start p-8">
+        <div className="fixed inset-0 z-[-1] animate-float
+          bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.3)_0%,transparent_50%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1)_0%,transparent_50%),radial-gradient(circle_at_40%_40%,rgba(120,119,198,0.2)_0%,transparent_50%)]"
+        ></div>
+        <AppStateProvider />
+      </div>
+    </BrowserRouter>
   );
 };
 

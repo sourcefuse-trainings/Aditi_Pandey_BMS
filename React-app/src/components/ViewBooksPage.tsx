@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import type { Book, Page, Genre } from '../types';
+import { useNavigate } from 'react-router-dom';
+import type { Book, Genre } from '../types';
 import { genres } from '../types';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit } from '@fortawesome/free-solid-svg-icons';
 import { logger } from '../utils/logger';
 import { calculateAge } from '../utils/bookUtils';
+import { bookService } from '../services/bookService';
 
 const genreColorClasses: Record<Genre, string> = {
   fiction: "bg-gradient-to-r from-red-500 to-red-400",
@@ -36,10 +37,9 @@ const BookCard: React.FC<{ book: Book; onEdit: () => void }> = ({ book, onEdit }
 
 const ViewBooksPage: React.FC<{
   books: Book[];
-  setPage: (page: Page) => void;
-  setBookToEdit: (book: Book | null) => void;
   onBooksFetched: (books: Book[]) => void;
-}> = ({ books, setPage, setBookToEdit, onBooksFetched }) => {
+}> = ({ books, onBooksFetched }) => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -55,34 +55,16 @@ const ViewBooksPage: React.FC<{
       .sort((a, b) => a.title.localeCompare(b.title));
   }, [books, search, filter]);
 
-  const handleEdit = (book: Book) => {
-    setBookToEdit(book);
-    setPage('addBook');
+  const handleEdit = (bookId: string) => {
+    navigate(`/edit/${bookId}`);
   };
 
   const fetchFromApi = async () => {
     setIsLoading(true);
     setError(null);
-    logger.info("Fetching books from API...");
-
     try {
-      const url = `https://jsonplaceholder.typicode.com/posts?_limit=5&_=${Date.now()}`;
-      const response = await fetch(url, { cache: "no-store" });
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-      
-      const data = await response.json();
-
-      const fetchedBooks: Book[] = data.map((post: any) => ({
-        id: uuidv4(),
-        title: post.title.split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-        author: `User ${post.userId}`,
-        isbn: `979-8-1234-5678-${post.id}`,
-        pubDate: "2023-05-10",
-        genre: "general",
-      }));
-
+      const fetchedBooks = await bookService.fetchBooksFromApi();
       onBooksFetched(fetchedBooks);
-      logger.success("API fetch successful.");
     } catch (err: any) {
       logger.error("Failed to fetch books from API", err);
       setError(err.message);
@@ -93,7 +75,7 @@ const ViewBooksPage: React.FC<{
 
   return (
     <div className="page-container w-[min(1200px,95vw)]">
-      <button onClick={() => setPage('home')} className="text-white/90 text-base px-3 py-2 rounded-md mb-6 transition-all hover:bg-white/10 hover:-translate-x-1">
+      <button onClick={() => navigate('/')} className="text-white/90 text-base px-3 py-2 rounded-md mb-6 transition-all hover:bg-white/10 hover:-translate-x-1">
         ⬅ Back
       </button>
       <h2 className="text-white text-3xl font-bold text-center mb-8 relative after:content-['👁️'] after:ml-3">Book List</h2>
@@ -114,8 +96,8 @@ const ViewBooksPage: React.FC<{
           <option value="" className="bg-[#2a5298]">All Genres</option>
           {genres.map(g => <option key={g} value={g} className="bg-[#2a5298]">{g.charAt(0).toUpperCase() + g.slice(1)}</option>)}
         </select>
-        <button onClick={fetchFromApi} className="px-6 py-2 bg-gradient-accent text-white font-medium rounded-md shadow-md transition-transform hover:scale-105">
-            Fetch from API
+        <button onClick={fetchFromApi} className="px-6 py-2 bg-gradient-accent text-white font-medium rounded-md shadow-md transition-transform hover:scale-105" disabled={isLoading}>
+            {isLoading ? 'Fetching...' : 'Fetch from API'}
         </button>
       </div>
 
@@ -126,11 +108,11 @@ const ViewBooksPage: React.FC<{
         </div>
       )}
 
-      {error && <div className="bg-red-500/20 text-red-400 p-4 rounded-md border border-red-500/30">{error}</div>}
+      {error && <div className="bg-red-500/20 text-red-400 p-4 rounded-md border border-red-500/30">Error: {error}</div>}
 
       {!isLoading && filteredBooks.length > 0 && (
          <div className="grid gap-6 mt-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {filteredBooks.map(book => <BookCard key={book.id} book={book} onEdit={() => handleEdit(book)} />)}
+            {filteredBooks.map(book => <BookCard key={book.id} book={book} onEdit={() => handleEdit(book.id)} />)}
          </div>
       )}
 

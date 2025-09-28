@@ -89,24 +89,30 @@ export const bookService = {
      * @returns A promise that resolves to an array of new books.
      */
     async fetchBooksFromApi(): Promise<Book[]> {
-        logger.info("Fetching books from API...");
-        const url = `https://jsonplaceholder.typicode.com/posts?_limit=3&_=${Date.now()}`;
-        const response = await fetch(url, { cache: "no-store" });
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        const data = await response.json();
-        
-        // Maps the API data to our Book type
-        return data.map((post: any) => ({
-            id: uuidv4(),
-            title: post.title.split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
-            author: `User ${post.userId}`,
-            isbn: `1000-${post.id}`,
-            pubDate: "2023-05-10",
-            genre: "general",
-        }));
-    },
+    logger.info("Fetching books from API...");
+
+    const randomStart = Math.floor(Math.random() * (100 - 3)); // 100 posts total
+    const url = `https://jsonplaceholder.typicode.com/posts?_start=${randomStart}&_limit=3`;
+
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return data.map((post: any) => ({
+        id: uuidv4(),
+        title: post.title
+            .split(" ")
+            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" "),
+        author: `User ${post.userId}`,
+        isbn: `1000-${post.id}`,
+        pubDate: "2023-05-10",
+        genre: "general",
+    }));
+},
 
     /**
      * Merges fetched books into the existing list, avoiding duplicates by title.

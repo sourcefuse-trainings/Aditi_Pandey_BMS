@@ -1,71 +1,122 @@
+// App.tsx
+
 import React, { useReducer, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import type { Book, AppState, Action } from './types';
 import { logger } from './utils/logger';
 import { bookService } from './services/bookService';
-import PageAnimator from './components/PageAnimator';
+import { ThemeProvider, createTheme, CssBaseline, Container, CircularProgress, Box } from '@mui/material';
 
 // Lazily import page components
-const HomePage = lazy(() => import('./components/HomePage'));
-const AddBookPage = lazy(() => import('./components/AddBookPage'));
-const ViewBooksPage = lazy(() => import('./components/ViewBooksPage'));
-const DeleteBookPage = lazy(() => import('./components/DeleteBookPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AddBookPage = lazy(() => import('./pages/AddBookPage'));
+const ViewBooksPage = lazy(() => import('./pages/ViewBooksPage'));
+const DeleteBookPage = lazy(() => import('./pages/DeleteBookPage'));
 
-// The reducer is now simpler
+// Define our custom theme
+const customTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: '#6c63ff', // A nice, modern purple
+    },
+    background: {
+      default: '#121212',
+      paper: '#1e1e1e',
+    },
+  },
+  typography: {
+    fontFamily: 'Roboto, sans-serif',
+    h1: {
+      fontWeight: 700,
+    },
+    h2: {
+      fontWeight: 700,
+    },
+    h4: {
+        fontWeight: 700,
+    }
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 600,
+        },
+      },
+    },
+    MuiTextField: {
+        styleOverrides: {
+            root: {
+                '& .MuiOutlinedInput-root': {
+                    borderRadius: 8,
+                },
+            },
+        },
+    },
+    MuiCard: {
+        styleOverrides: {
+            root: {
+                borderRadius: 12,
+            }
+        }
+    }
+  },
+});
+
+// Reducer and other logic remains the same...
 const appReducer = (state: AppState, action: Action): AppState => {
-  logger.info(`Action dispatched: ${action.type}`);
-  switch (action.type) {
-    case 'SET_BOOKS':
-      return { ...state, books: action.payload };
-    default:
-      return state;
-  }
-};
-
-// A simple component to show while pages are loading
-const LoadingFallback: React.FC = () => (
-  <div className="flex justify-center items-center h-screen">
-    <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
-  </div>
-);
-
-// This component contains the app's state logic and routes
-const AppStateProvider: React.FC = () => {
-  const initialState: AppState = {
-    books: bookService.getBooks(),
-  };
-
-  const [state, dispatch] = useReducer(appReducer, initialState);
-  const navigate = useNavigate();
-
-  // Handler functions now use navigate for redirection
-  const handleAddBook = (book: Omit<Book, 'id'>) => {
-    const updatedBooks = bookService.addBook(book);
-    dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
-    navigate('/view');
-  };
-
-  const handleUpdateBook = (updatedBook: Book) => {
-    const updatedBooks = bookService.updateBook(updatedBook);
-    dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
-    navigate('/view');
-  };
-
-  const handleDeleteBook = (id: string) => {
-    const updatedBooks = bookService.deleteBook(id);
-    if (updatedBooks) {
-      dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+    logger.info(`Action dispatched: ${action.type}`);
+    switch (action.type) {
+      case 'SET_BOOKS':
+        return { ...state, books: action.payload };
+      default:
+        return state;
     }
   };
-
-  const handleAddFetchedBooks = (fetchedBooks: Book[]) => {
-    const updatedBooks = bookService.addFetchedBooks(state.books, fetchedBooks);
-    dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
-  };
   
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <PageAnimator>
+  const LoadingFallback: React.FC = () => (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+      </Box>
+  );
+  
+  const AppStateProvider: React.FC = () => {
+    const initialState: AppState = {
+      books: bookService.getBooks(),
+    };
+  
+    const [state, dispatch] = useReducer(appReducer, initialState);
+    const navigate = useNavigate();
+  
+    const handleAddBook = (book: Omit<Book, 'id'>) => {
+      const updatedBooks = bookService.addBook(book);
+      dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+      navigate('/view');
+    };
+  
+    const handleUpdateBook = (updatedBook: Book) => {
+      const updatedBooks = bookService.updateBook(updatedBook);
+      dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+      navigate('/view');
+    };
+  
+    const handleDeleteBook = (id: string) => {
+      const updatedBooks = bookService.deleteBook(id);
+      if (updatedBooks) {
+        dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+      }
+    };
+  
+    const handleAddFetchedBooks = (fetchedBooks: Book[]) => {
+      const updatedBooks = bookService.addFetchedBooks(state.books, fetchedBooks);
+      dispatch({ type: 'SET_BOOKS', payload: updatedBooks });
+    };
+  
+    return (
+      <Suspense fallback={<LoadingFallback />}>
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/view" element={<ViewBooksPage books={state.books} onBooksFetched={handleAddFetchedBooks} />} />
@@ -73,22 +124,20 @@ const AppStateProvider: React.FC = () => {
           <Route path="/edit/:bookId" element={<AddBookPage books={state.books} addBook={handleAddBook} updateBook={handleUpdateBook} />} />
           <Route path="/delete" element={<DeleteBookPage books={state.books} deleteBook={handleDeleteBook} />} />
         </Routes>
-      </PageAnimator>
-    </Suspense>
-  );
-};
+      </Suspense>
+    );
+  };
 
-// The main App component sets up the Router
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
-      <div className="relative min-h-screen font-sans text-text-primary overflow-x-hidden bg-gradient-body flex justify-center items-start p-8">
-        <div className="fixed inset-0 z-[-1] animate-float
-          bg-[radial-gradient(circle_at_20%_80%,rgba(120,119,198,0.3)_0%,transparent_50%),radial-gradient(circle_at_80%_20%,rgba(255,255,255,0.1)_0%,transparent_50%),radial-gradient(circle_at_40%_40%,rgba(120,119,198,0.2)_0%,transparent_50%)]"
-        ></div>
-        <AppStateProvider />
-      </div>
-    </BrowserRouter>
+    <ThemeProvider theme={customTheme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <Container component="main" sx={{ py: 4 }}>
+          <AppStateProvider />
+        </Container>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 };
 

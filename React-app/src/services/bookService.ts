@@ -75,7 +75,7 @@ export const bookService = {
     deleteBook(id: string): Book[] | null {
         let currentBooks = this.getBooks();
         const bookToDelete = currentBooks.find(b => b.id === id);
-        if (bookToDelete && window.confirm(`Are you sure you want to delete "${bookToDelete.title}"?`)) {
+        if (bookToDelete) {
             const updatedBooks = currentBooks.filter(book => book.id !== id);
             saveBooks(updatedBooks);
             logger.info(`Book deleted: "${bookToDelete.title}"`);
@@ -90,7 +90,7 @@ export const bookService = {
      */
     async fetchBooksFromApi(): Promise<Book[]> {
         logger.info("Fetching books from API...");
-        const url = `https://jsonplaceholder.typicode.com/posts?_limit=5&_=${Date.now()}`;
+        const url = `https://jsonplaceholder.typicode.com/posts?_limit=3&_=${Date.now()}`;
         const response = await fetch(url, { cache: "no-store" });
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -102,7 +102,7 @@ export const bookService = {
             id: uuidv4(),
             title: post.title.split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' '),
             author: `User ${post.userId}`,
-            isbn: `979-8-1234-5678-${post.id}`,
+            isbn: `1000-${post.id}`,
             pubDate: "2023-05-10",
             genre: "general",
         }));

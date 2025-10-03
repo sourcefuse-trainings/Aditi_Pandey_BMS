@@ -7,7 +7,7 @@ import { faPlusCircle, faBookOpen, faTrashAlt } from '@fortawesome/free-solid-sv
 import { Card, CardActionArea, CardContent, Typography, Grid, Container, Box } from '@mui/material';
 
 const MenuCard: React.FC<{ icon: any; text: string; onClick: () => void }> = ({ icon, text, onClick }) => (
-    <Grid item xs={12} md={4}>
+    <Grid >
         <CardActionArea component="div" onClick={onClick} sx={{ height: '100%', borderRadius: 3 }}>
             <Card sx={{
                 minHeight: 220,

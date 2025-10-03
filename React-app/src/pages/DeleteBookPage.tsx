@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Book } from '../types';
-import BookList from '../components/BookList';
 import { Button, Container, Typography, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Box } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+// highlight-next-line
+import ChromaGridBookList from '../components/ChromaGridBookList';
 
 interface DeleteBookPageProps {
   books: Book[];
@@ -15,13 +16,11 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  // The selectedBookId state is no longer needed here
 
   const handleClickOpen = (book: Book) => {
     setBookToDelete(book);
     setDialogOpen(true);
-    // CHANGE 1: Close the enlarged card view when the dialog opens for a cleaner UI.
-    setSelectedBookId(null);
   };
 
   const handleClose = () => {
@@ -38,22 +37,7 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
 
   return (
     <Container maxWidth="lg">
-      <Box
-        onClick={() => setSelectedBookId(null)} // Click outside to close
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bgcolor: 'rgba(0, 0, 0, 0.7)',
-          opacity: selectedBookId ? 1 : 0,
-          visibility: selectedBookId ? 'visible' : 'hidden',
-          zIndex: 1399,
-          transition: 'opacity 0.3s ease, visibility 0.3s ease',
-        }}
-      />
-
+      {/* The background overlay Box is no longer needed here */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />}>
           Back
@@ -68,10 +52,10 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
         </Typography>
       </Box>
 
-      <BookList
+      {/* Replaced BookList with ChromaGridBookList */}
+      {/* highlight-start */}
+      <ChromaGridBookList
         books={books}
-        selectedBookId={selectedBookId}
-        setSelectedBookId={setSelectedBookId}
         renderActions={(book) => (
             <Button
                 size="small"
@@ -83,11 +67,12 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
             </Button>
         )}
       />
+      {/* highlight-end */}
       
       <Dialog 
         open={dialogOpen} 
         onClose={handleClose}
-        // CHANGE 2: Set a higher z-index to ensure the dialog appears on top of the overlay.
+        // zIndex ensures the dialog appears over the expanded card
         sx={{ zIndex: 1500 }}
       >
         <DialogTitle>Confirm Deletion</DialogTitle>

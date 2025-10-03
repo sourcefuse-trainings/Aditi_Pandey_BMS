@@ -9,4 +9,5 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/setupTests.ts',
   },
+  base: '/Aditi_Pandey_BMS/'
 });

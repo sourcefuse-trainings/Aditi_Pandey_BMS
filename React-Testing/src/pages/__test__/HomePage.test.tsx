@@ -1,8 +1,16 @@
+/**
+ * @file Test suite for the HomePage component.
+ * Verifies that the main heading, subtitle, and navigation cards are rendered
+ * and that clicking on a card triggers the correct navigation action.
+ */
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import HomePage from '../../pages/HomePage';
 
+// Mock react-router's navigate function to assert navigation calls
+// without needing a full router implementation.
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>();
@@ -14,7 +22,7 @@ vi.mock('react-router-dom', async (importOriginal) => {
 
 describe('HomePage', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks(); // Reset mocks before each test.
   });
 
   const renderHomePage = () => {
@@ -38,6 +46,7 @@ describe('HomePage', () => {
     expect(screen.getByText('Delete a Book')).toBeInTheDocument();
   });
 
+  // Use `it.each` to run the same test logic for each navigation card, reducing code duplication.
   it.each([
     { cardName: 'Add New Book', path: '/add' },
     { cardName: 'View All Books', path: '/view' },
@@ -45,9 +54,16 @@ describe('HomePage', () => {
   ])('should navigate to $path when the "$cardName" card is clicked', async ({ cardName, path }) => {
     const user = userEvent.setup();
     renderHomePage();
+    
+    // Find the card by its text and then find the closest parent button element.
+    // This works because the component was fixed to render the CardActionArea as a button.
     const card = screen.getByText(cardName).closest('button');
     expect(card).toBeInTheDocument();
+
+    // Act: Simulate a user clicking the card.
     await user.click(card!);
+    
+    // Assert: Verify that navigate was called with the correct path.
     expect(mockedNavigate).toHaveBeenCalledWith(path);
   });
 });

@@ -1,3 +1,8 @@
+/**
+ * @file Test suite for the ViewBooksPage component.
+ * This file covers rendering, filtering, API fetching, error handling, and navigation logic.
+ */
+
 import React from 'react';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -6,14 +11,17 @@ import { bookService } from '../../services/bookService';
 import type { Book } from '../../types';
 import type { Mock } from 'vitest' ; 
 
+// Mock the book service to isolate the component and control API responses during tests.
 vi.mock('../../services/bookService', () => ({
   bookService: {
     fetchBooksFromApi: vi.fn(),
   },
 }));
 
+// Mock the logger to prevent console output during tests.
 vi.mock('../../utils/logger');
 
+// Mock the ChromaGridBookList to simplify the DOM and speed up tests.
 vi.mock('../../components/ChromaGridBookList', () => ({
   default: ({ books, renderActions }: { books: Book[], renderActions: (book: Book) => React.ReactNode }) => (
     <div data-testid="book-list">
@@ -28,6 +36,7 @@ vi.mock('../../components/ChromaGridBookList', () => ({
   ),
 }));
 
+// Mock react-router's navigate function to assert navigation calls.
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>();
@@ -45,7 +54,7 @@ describe('ViewBooksPage', () => {
   const mockOnBooksFetched = vi.fn();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks(); // Reset mocks before each test
   });
 
   it('should render the initial list of books', () => {
@@ -67,8 +76,11 @@ describe('ViewBooksPage', () => {
   it('should filter books based on genre selection', async () => {
     const user = userEvent.setup();
     render(<ViewBooksPage books={mockBooks} onBooksFetched={mockOnBooksFetched} />);
+    
+    // The accessibility fixes in the component allow us to find the combobox by its label.
     await user.click(screen.getByRole('combobox', { name: /genre/i }));
     await user.click(await screen.findByRole('option', { name: /science/i }));
+    
     expect(screen.getByText('A Brief History of Time')).toBeInTheDocument();
     expect(screen.queryByText('The Great Gatsby')).not.toBeInTheDocument();
   });
@@ -79,8 +91,14 @@ describe('ViewBooksPage', () => {
     (bookService.fetchBooksFromApi as Mock).mockResolvedValue(newApiBooks);
     render(<ViewBooksPage books={mockBooks} onBooksFetched={mockOnBooksFetched} />);
     const fetchButton = screen.getByRole('button', { name: /fetch from api/i });
+    
     await user.click(fetchButton);
-    expect(screen.getByRole('progressbar')).toBeInTheDocument();
+
+    // Use `findByRole` to wait for the element to appear asynchronously.
+    // This is necessary because the loading state update is not instantaneous.
+    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+    
+    // Wait for the asynchronous operations inside the component to complete.
     await waitFor(() => {
       expect(mockOnBooksFetched).toHaveBeenCalledWith(newApiBooks);
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
@@ -92,6 +110,8 @@ describe('ViewBooksPage', () => {
     (bookService.fetchBooksFromApi as Mock).mockRejectedValue(new Error('API Error'));
     render(<ViewBooksPage books={mockBooks} onBooksFetched={mockOnBooksFetched} />);
     await user.click(screen.getByRole('button', { name: /fetch from api/i }));
+    
+    // Wait for the error Alert to appear.
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent('API Error');
     expect(mockOnBooksFetched).not.toHaveBeenCalled();
@@ -102,7 +122,9 @@ describe('ViewBooksPage', () => {
     render(<ViewBooksPage books={mockBooks} onBooksFetched={mockOnBooksFetched} />);
     const secondBookContainer = screen.getByText('A Brief History of Time').parentElement!;
     const editButton = within(secondBookContainer).getByRole('button', { name: /edit/i });
+    
     await user.click(editButton);
+    
     expect(mockedNavigate).toHaveBeenCalledWith('/edit/2');
   });
 });

@@ -1,5 +1,4 @@
-// src/components/ChromaBookCard.tsx
-import React from 'react';
+import React, { memo } from 'react';
 import type { Book, Genre } from '../types';
 import { calculateAge } from '../utils/bookUtils';
 import { Box, Chip, Typography, Divider, CardActions } from '@mui/material';
@@ -22,7 +21,7 @@ interface ChromaBookCardProps {
     renderActions: () => React.ReactNode;
 }
 
-const ChromaBookCard: React.FC<ChromaBookCardProps> = ({ book, isSelected, isDimmed, onClick, renderActions }) => {
+const ChromaBookCard: React.FC<ChromaBookCardProps> = memo(({ book, isSelected, isDimmed, onClick, renderActions }) => {
     
     const handleCardMove: React.MouseEventHandler<HTMLElement> = e => {
         const c = e.currentTarget as HTMLElement;
@@ -110,6 +109,6 @@ const ChromaBookCard: React.FC<ChromaBookCardProps> = ({ book, isSelected, isDim
             </Box>
         </article>
     );
-};
+});
 
 export default ChromaBookCard;

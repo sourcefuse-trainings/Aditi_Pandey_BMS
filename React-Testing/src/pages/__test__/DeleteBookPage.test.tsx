@@ -1,9 +1,17 @@
+/**
+ * @file Test suite for the DeleteBookPage component.
+ * This file verifies that the page renders correctly, the confirmation
+ * dialog works as expected, and the delete callback is triggered appropriately.
+ */
+
 import React from 'react';
-import { render, screen, within } from '@testing-library/react';
+// Import `waitForElementToBeRemoved` to handle asynchronous disappearing elements.
+import { render, screen, within, waitForElementToBeRemoved } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DeleteBookPage from '../../pages/DeleteBookPage';
 import type { Book } from '../../types';
 
+// Mock the book list component for simplicity.
 vi.mock('../../components/ChromaGridBookList', () => ({
   default: React.forwardRef(({ books, renderActions }: { books: Book[], renderActions: (book: Book) => React.ReactNode }, ref: any) => (
     <div data-testid="book-list" ref={ref}>
@@ -17,6 +25,7 @@ vi.mock('../../components/ChromaGridBookList', () => ({
   )),
 }));
 
+// Mock react-router's navigate function.
 const mockedNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>();
@@ -49,7 +58,9 @@ describe('DeleteBookPage', () => {
     render(<DeleteBookPage books={mockBooks} deleteBook={mockDeleteBook} />);
     const firstBookContainer = screen.getByText('The Great Gatsby').parentElement!;
     const deleteButton = within(firstBookContainer).getByRole('button', { name: /delete/i });
+    
     await user.click(deleteButton);
+    
     const dialog = await screen.findByRole('dialog');
     expect(dialog).toBeInTheDocument();
     expect(within(dialog).getByText(/are you sure you want to permanently delete "The Great Gatsby"/i)).toBeInTheDocument();
@@ -60,11 +71,15 @@ describe('DeleteBookPage', () => {
     render(<DeleteBookPage books={mockBooks} deleteBook={mockDeleteBook} />);
     const firstBookContainer = screen.getByText('The Great Gatsby').parentElement!;
     await user.click(within(firstBookContainer).getByRole('button', { name: /delete/i }));
+    
     const dialog = await screen.findByRole('dialog');
     const confirmDeleteButton = within(dialog).getByRole('button', { name: /delete/i });
     await user.click(confirmDeleteButton);
+    
+    // Use `waitForElementToBeRemoved` because the MUI Dialog has an exit animation.
+    // This ensures the test waits for the dialog to be fully removed from the DOM.
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
     expect(mockDeleteBook).toHaveBeenCalledWith('1');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('should close the dialog without calling deleteBook when cancel is clicked', async () => {
@@ -72,10 +87,13 @@ describe('DeleteBookPage', () => {
     render(<DeleteBookPage books={mockBooks} deleteBook={mockDeleteBook} />);
     const firstBookContainer = screen.getByText('The Great Gatsby').parentElement!;
     await user.click(within(firstBookContainer).getByRole('button', { name: /delete/i }));
+    
     const dialog = await screen.findByRole('dialog');
     const cancelButton = within(dialog).getByRole('button', { name: /cancel/i });
     await user.click(cancelButton);
+
+    // Also wait here for the animation to finish before proceeding.
+    await waitForElementToBeRemoved(() => screen.queryByRole('dialog'));
     expect(mockDeleteBook).not.toHaveBeenCalled();
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

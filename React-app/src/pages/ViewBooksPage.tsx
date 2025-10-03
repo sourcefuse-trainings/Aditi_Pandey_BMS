@@ -4,10 +4,11 @@ import type { Book } from '../types';
 import { genres } from '../types';
 import { logger } from '../utils/logger';
 import { bookService } from '../services/bookService';
-import BookList from '../components/BookList';
 import { Button, TextField, Select, MenuItem, FormControl, InputLabel, Container, Typography, CircularProgress, Alert, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+// highlight-next-line
+import ChromaGridBookList from '../components/ChromaGridBookList';
 
 const ViewBooksPage: React.FC<{
   books: Book[];
@@ -18,7 +19,7 @@ const ViewBooksPage: React.FC<{
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  // The selectedBookId state is no longer needed here
 
   const filteredBooks = useMemo(() => {
     return books
@@ -50,21 +51,7 @@ const ViewBooksPage: React.FC<{
 
   return (
     <Container maxWidth="lg">
-      <Box
-        onClick={() => setSelectedBookId(null)} // Click outside to close
-        sx={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          bgcolor: 'rgba(0, 0, 0, 0.7)',
-          opacity: selectedBookId ? 1 : 0,
-          visibility: selectedBookId ? 'visible' : 'hidden',
-          zIndex: 1399,
-          transition: 'opacity 0.3s ease, visibility 0.3s ease',
-        }}
-      />
+      {/* The background overlay Box is no longer needed here */}
       <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
         Back
       </Button>
@@ -72,7 +59,7 @@ const ViewBooksPage: React.FC<{
         Book List
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
         <TextField
           label="Search by title or author"
           variant="outlined"
@@ -104,10 +91,10 @@ const ViewBooksPage: React.FC<{
 
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
 
-      <BookList
+      {/* Replaced BookList with ChromaGridBookList */}
+      {/* highlight-start */}
+      <ChromaGridBookList
         books={filteredBooks}
-        selectedBookId={selectedBookId}
-        setSelectedBookId={setSelectedBookId}
         renderActions={(book) => (
             <Button
                 size="small"
@@ -118,6 +105,7 @@ const ViewBooksPage: React.FC<{
             </Button>
         )}
       />
+      {/* highlight-end */}
     </Container>
   );
 };

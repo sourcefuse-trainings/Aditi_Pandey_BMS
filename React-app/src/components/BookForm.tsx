@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { type Book, genres } from '../types';
 import { logger } from '../utils/logger';
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box } from '@mui/material';
+// highlight-next-line
+import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box, type SelectChangeEvent } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -19,7 +20,7 @@ const initialFormData = {
 };
 
 const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
-  const navigate = useNavigate();
+  
   const { bookId } = useParams<{ bookId: string }>();
 
   const [formData, setFormData] = useState(initialFormData);
@@ -49,7 +50,10 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
     }
   }, [bookToEdit, isEditing]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
+  // highlight-start
+  // FIX: Updated the type to handle both TextField and Select change events
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
+  // highlight-end
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name as string]: value }));
   };
@@ -74,7 +78,8 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          {/* FIX: Added 'item' and 'xs' props to all Grid children */}
+          <Grid >
             <TextField
               name="title"
               required
@@ -85,7 +90,7 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid >
             <TextField
               name="author"
               required
@@ -96,7 +101,7 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid >
             <TextField
               name="isbn"
               required
@@ -107,15 +112,23 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid >
+            {/* highlight-start */}
+            {/* FIX: Replaced deprecated 'renderInput' with the 'slotProps' API */}
             <DatePicker
               label="Publication Date"
               value={publicationDate}
               onChange={handleDateChange}
-              renderInput={(params) => <TextField {...params} fullWidth required />}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  required: true
+                }
+              }}
             />
+            {/* highlight-end */}
           </Grid>
-          <Grid item xs={12}>
+          <Grid >
             <FormControl fullWidth required>
               <InputLabel id="genre-label">Genre</InputLabel>
               <Select

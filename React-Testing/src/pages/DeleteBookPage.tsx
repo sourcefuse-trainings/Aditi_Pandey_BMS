@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Book } from '../types';
 import { Button, Container, Typography, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Box } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// highlight-next-line
 import ChromaGridBookList from '../components/ChromaGridBookList';
+import type { ChromaGridHandle } from '../components/ChromaGrid';
 
 interface DeleteBookPageProps {
   books: Book[];
@@ -16,7 +16,7 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-  // The selectedBookId state is no longer needed here
+  const chromaGridRef = useRef<ChromaGridHandle>(null);
 
   const handleClickOpen = (book: Book) => {
     setBookToDelete(book);
@@ -26,6 +26,7 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
   const handleClose = () => {
     setDialogOpen(false);
     setBookToDelete(null);
+    chromaGridRef.current?.reFocus();
   };
 
   const handleDelete = () => {
@@ -34,10 +35,20 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
     }
     handleClose();
   };
+  
+  const renderDeleteAction = useCallback((book: Book) => (
+    <Button
+        size="small"
+        color="error"
+        onClick={() => handleClickOpen(book)}
+        startIcon={<DeleteIcon />}
+    >
+        Delete
+    </Button>
+  ), []); // No dependencies needed as handleClickOpen is stable
 
   return (
     <Container maxWidth="lg">
-      {/* The background overlay Box is no longer needed here */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />}>
           Back
@@ -51,28 +62,14 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
             Select a book from the list to permanently delete it.
         </Typography>
       </Box>
-
-      {/* Replaced BookList with ChromaGridBookList */}
-      {/* highlight-start */}
       <ChromaGridBookList
+        ref={chromaGridRef}
         books={books}
-        renderActions={(book) => (
-            <Button
-                size="small"
-                color="error"
-                onClick={() => handleClickOpen(book)}
-                startIcon={<DeleteIcon />}
-            >
-                Delete
-            </Button>
-        )}
+        renderActions={renderDeleteAction}
       />
-      {/* highlight-end */}
-      
       <Dialog 
         open={dialogOpen} 
         onClose={handleClose}
-        // zIndex ensures the dialog appears over the expanded card
         sx={{ zIndex: 1500 }}
       >
         <DialogTitle>Confirm Deletion</DialogTitle>

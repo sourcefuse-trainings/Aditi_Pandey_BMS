@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Book } from '../types';
 import { genres } from '../types';
@@ -7,7 +7,6 @@ import { bookService } from '../services/bookService';
 import { Button, TextField, Select, MenuItem, FormControl, InputLabel, Container, Typography, CircularProgress, Alert, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// highlight-next-line
 import ChromaGridBookList from '../components/ChromaGridBookList';
 
 const ViewBooksPage: React.FC<{
@@ -19,7 +18,6 @@ const ViewBooksPage: React.FC<{
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The selectedBookId state is no longer needed here
 
   const filteredBooks = useMemo(() => {
     return books
@@ -49,16 +47,24 @@ const ViewBooksPage: React.FC<{
     }
   };
 
+  const renderEditAction = useCallback((book: Book) => (
+    <Button
+        size="small"
+        onClick={() => handleEdit(book.id)}
+        startIcon={<EditIcon />}
+    >
+        Edit
+    </Button>
+  ), [navigate]);
+
   return (
     <Container maxWidth="lg">
-      {/* The background overlay Box is no longer needed here */}
       <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
         Back
       </Button>
       <Typography variant="h4" component="h1" gutterBottom align="center">
         Book List
       </Typography>
-
       <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
         <TextField
           label="Search by title or author"
@@ -88,24 +94,11 @@ const ViewBooksPage: React.FC<{
           {isLoading ? <CircularProgress size={24} /> : 'Fetch from API'}
         </Button>
       </Box>
-
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-
-      {/* Replaced BookList with ChromaGridBookList */}
-      {/* highlight-start */}
       <ChromaGridBookList
         books={filteredBooks}
-        renderActions={(book) => (
-            <Button
-                size="small"
-                onClick={() => handleEdit(book.id)}
-                startIcon={<EditIcon />}
-            >
-                Edit
-            </Button>
-        )}
+        renderActions={renderEditAction}
       />
-      {/* highlight-end */}
     </Container>
   );
 };

@@ -1,9 +1,10 @@
+// src/components/BookForm.tsx
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+// highlight-next-line
+import { useParams, useNavigate } from 'react-router-dom';
 import { type Book, genres } from '../types';
 import { logger } from '../utils/logger';
-// highlight-next-line
-import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box, type SelectChangeEvent } from '@mui/material';
+import { TextField, Button, Select, MenuItem, FormControl, InputLabel, Box, type SelectChangeEvent, CircularProgress } from '@mui/material';
 import Grid from '@mui/material/Grid';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -11,8 +12,11 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 interface BookFormProps {
   books: Book[];
-  addBook: (book: Omit<Book, 'id'>) => void;
-  updateBook: (book: Book) => void;
+  // highlight-start
+  // Props are now async functions
+  addBook: (book: Omit<Book, 'id'>) => Promise<void>;
+  updateBook: (book: Book) => Promise<void>;
+  // highlight-end
 }
 
 const initialFormData = {
@@ -22,6 +26,10 @@ const initialFormData = {
 const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
   
   const { bookId } = useParams<{ bookId: string }>();
+  // highlight-start
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // highlight-end
 
   const [formData, setFormData] = useState(initialFormData);
   const [publicationDate, setPublicationDate] = useState<Date | null>(null);
@@ -42,6 +50,7 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
         pubDate: bookToEdit.pubDate,
         genre: bookToEdit.genre,
       });
+      // Ensure pubDate is a valid date object
       setPublicationDate(new Date(bookToEdit.pubDate));
       logger.info(`Editing book: ${bookToEdit.title}`);
     } else {
@@ -50,36 +59,49 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
     }
   }, [bookToEdit, isEditing]);
 
-  // highlight-start
-  // FIX: Updated the type to handle both TextField and Select change events
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
-  // highlight-end
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name as string]: value }));
   };
 
   const handleDateChange = (date: Date | null) => {
     if (date) {
-        setPublicationDate(date);
+      setPublicationDate(date);
       setFormData(prev => ({ ...prev, pubDate: date.toISOString().split('T')[0] }));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // highlight-start
+  // Handle submit is now async
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isEditing && bookToEdit) {
-      updateBook({ ...bookToEdit, ...formData });
-    } else {
-      addBook(formData);
+    setIsSubmitting(true);
+    
+    try {
+      if (isEditing && bookToEdit) {
+        await updateBook({ ...bookToEdit, ...formData });
+      } else {
+        await addBook(formData);
+      }
+      // On success, navigate back to the home page
+      navigate('/');
+    } catch (error) {
+      // Error is already logged and alerted by the service
+      logger.error('Form submission failed', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+  // highlight-end
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, maxWidth: 800, mx: 'auto' }}>
         <Grid container spacing={2}>
-          {/* FIX: Added 'item' and 'xs' props to all Grid children */}
-          <Grid >
+          {/* highlight-start */}
+          {/* FIX: Added 'item' and responsive 'xs'/'sm' props */}
+          <Grid item xs={12} sm={6}>
+          {/* highlight-end */}
             <TextField
               name="title"
               required
@@ -88,9 +110,12 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
               label="Title"
               value={formData.title}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
           </Grid>
-          <Grid >
+          {/* highlight-start */}
+          <Grid item xs={12} sm={6}>
+          {/* highlight-end */}
             <TextField
               name="author"
               required
@@ -99,9 +124,12 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
               label="Author"
               value={formData.author}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
           </Grid>
-          <Grid >
+          {/* highlight-start */}
+          <Grid item xs={12} sm={6}>
+          {/* highlight-end */}
             <TextField
               name="isbn"
               required
@@ -110,15 +138,17 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
               label="ISBN"
               value={formData.isbn}
               onChange={handleChange}
+              disabled={isSubmitting}
             />
           </Grid>
-          <Grid >
-            {/* highlight-start */}
-            {/* FIX: Replaced deprecated 'renderInput' with the 'slotProps' API */}
+          {/* highlight-start */}
+          <Grid item xs={12} sm={6}>
+          {/* highlight-end */}
             <DatePicker
               label="Publication Date"
               value={publicationDate}
               onChange={handleDateChange}
+              disabled={isSubmitting}
               slotProps={{
                 textField: {
                   fullWidth: true,
@@ -126,9 +156,10 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
                 }
               }}
             />
-            {/* highlight-end */}
           </Grid>
-          <Grid >
+          {/* highlight-start */}
+          <Grid item xs={12}>
+          {/* highlight-end */}
             <FormControl fullWidth required>
               <InputLabel id="genre-label">Genre</InputLabel>
               <Select
@@ -138,6 +169,7 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
                 value={formData.genre}
                 label="Genre"
                 onChange={handleChange}
+                disabled={isSubmitting}
               >
                 <MenuItem value="">
                   <em>Select Genre</em>
@@ -156,8 +188,13 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
           fullWidth
           variant="contained"
           sx={{ mt: 3, mb: 2 }}
+          // highlight-start
+          disabled={isSubmitting}
+          // highlight-end
         >
-          {isEditing ? 'Save Changes' : 'Add Book'}
+          {/* highlight-start */}
+          {isSubmitting ? <CircularProgress size={24} color="inherit" /> : (isEditing ? 'Save Changes' : 'Add Book')}
+          {/* highlight-end */}
         </Button>
       </Box>
     </LocalizationProvider>

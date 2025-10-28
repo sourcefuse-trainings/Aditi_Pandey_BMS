@@ -20,7 +20,6 @@ export interface ChromaGridHandle {
 type SetterFn = (v: number | string) => void;
 
 // 1. Define the component's render logic as an inner function.
-// This function is generic over type T.
 function ChromaGridInner<T>(
   props: ChromaGridProps<T>,
   ref: React.Ref<ChromaGridHandle>
@@ -111,7 +110,7 @@ function ChromaGridInner<T>(
 }
 
 // 2. Create the final component by wrapping the inner function with forwardRef
-// and casting it to the correct generic type. This is the key part.
+
 const ChromaGrid = React.forwardRef(ChromaGridInner) as <T>(
   props: ChromaGridProps<T> & { ref?: React.Ref<ChromaGridHandle> }
 ) => React.ReactElement;

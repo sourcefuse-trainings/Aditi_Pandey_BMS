@@ -16,6 +16,7 @@ export const pool = mysql.createPool({
   queueLimit: 0,
 });
 
+// Test the connection
 pool.getConnection()
     .then(conn => {
         console.log('Database connection pool created successfully.');

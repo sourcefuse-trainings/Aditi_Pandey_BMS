@@ -156,6 +156,7 @@ const BookForm: React.FC<BookFormProps> = ({ books, addBook, updateBook }) => {
                 }
               }}
             />
+            {/* highlight-end */}
           </Grid>
           {/* highlight-start */}
           <Grid item xs={12}>

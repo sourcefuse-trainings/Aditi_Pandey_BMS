@@ -63,6 +63,7 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
             </Button>
         )}
       />
+      {/* highlight-end */}
       
       <Dialog open={dialogOpen} onClose={handleClose} sx={{ zIndex: 1500 }}>
         <DialogTitle>Confirm Deletion</DialogTitle>

@@ -1,5 +1,4 @@
-// src/pages/ViewBooksPage.tsx
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Book } from '../types';
 import { genres } from '../types';
@@ -12,8 +11,8 @@ import ChromaGridBookList from '../components/ChromaGridBookList';
 
 const ViewBooksPage: React.FC<{
   books: Book[];
-  reloadBooks: () => Promise<void>; // Prop to tell parent to re-fetch
-}> = ({ books, reloadBooks }) => {
+  onBooksFetched: (books: Book[]) => void;
+}> = ({ books, onBooksFetched }) => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('');
@@ -27,7 +26,7 @@ const ViewBooksPage: React.FC<{
          book.author.toLowerCase().includes(search.toLowerCase())) &&
         (filter ? book.genre === filter : true)
       )
-      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()); // Sort by most recent
+      .sort((a, b) => a.title.localeCompare(b.title));
   }, [books, search, filter]);
 
   const handleEdit = (bookId: string) => {
@@ -39,14 +38,7 @@ const ViewBooksPage: React.FC<{
     setError(null);
     try {
       const fetchedBooks = await bookService.fetchBooksFromApi();
-      if (fetchedBooks.length > 0) {
-        // Add each fetched book to our database via the service
-        for (const book of fetchedBooks) {
-            // We don't need to await each one if we don't care about sequential adding
-            bookService.addBook(book);
-        }
-        await reloadBooks(); // After adding, reload the main list
-      }
+      onBooksFetched(fetchedBooks);
     } catch (err: any) {
       logger.error("Failed to fetch books from API", err);
       setError(err.message);
@@ -54,6 +46,16 @@ const ViewBooksPage: React.FC<{
       setIsLoading(false);
     }
   };
+
+  const renderEditAction = useCallback((book: Book) => (
+    <Button
+        size="small"
+        onClick={() => handleEdit(book.id)}
+        startIcon={<EditIcon />}
+    >
+        Edit
+    </Button>
+  ), [navigate]);
 
   return (
     <Container maxWidth="lg">
@@ -63,8 +65,7 @@ const ViewBooksPage: React.FC<{
       <Typography variant="h4" component="h1" gutterBottom align="center">
         Book List
       </Typography>
-
-      <Box sx={{ display: 'flex', gap: 2, mb: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
         <TextField
           label="Search by title or author"
           variant="outlined"
@@ -74,25 +75,29 @@ const ViewBooksPage: React.FC<{
         />
         <FormControl variant="outlined" sx={{ minWidth: 150 }}>
           <InputLabel>Genre</InputLabel>
-          <Select value={filter} onChange={e => setFilter(e.target.value)} label="Genre">
-            <MenuItem value=""><em>All Genres</em></MenuItem>
-            {genres.map(g => ( <MenuItem key={g} value={g}>{g.charAt(0).toUpperCase() + g.slice(1)}</MenuItem>))}
+          <Select
+            value={filter}
+            onChange={e => setFilter(e.target.value)}
+            label="Genre"
+          >
+            <MenuItem value="">
+              <em>All Genres</em>
+            </MenuItem>
+            {genres.map(g => (
+              <MenuItem key={g} value={g}>
+                {g.charAt(0).toUpperCase() + g.slice(1)}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
         <Button onClick={fetchFromApi} variant="contained" disabled={isLoading}>
-          {isLoading ? <CircularProgress size={24} /> : 'Fetch New Books'}
+          {isLoading ? <CircularProgress size={24} /> : 'Fetch from API'}
         </Button>
       </Box>
-
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-
       <ChromaGridBookList
         books={filteredBooks}
-        renderActions={(book) => (
-            <Button size="small" onClick={() => handleEdit(book.id)} startIcon={<EditIcon />}>
-                Edit
-            </Button>
-        )}
+        renderActions={renderEditAction}
       />
     </Container>
   );

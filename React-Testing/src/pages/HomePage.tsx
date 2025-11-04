@@ -1,13 +1,13 @@
-// src/pages/HomePage.tsx
+// pages/HomePage.tsx
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlusCircle, faBookOpen, faListCheck } from '@fortawesome/free-solid-svg-icons';
+import { faPlusCircle, faBookOpen, faTrashAlt } from '@fortawesome/free-solid-svg-icons';
 import { Card, CardActionArea, CardContent, Typography, Grid, Container, Box } from '@mui/material';
 
 const MenuCard: React.FC<{ icon: any; text: string; onClick: () => void }> = ({ icon, text, onClick }) => (
-    // FIX: Added 'item' and responsive props
-    <Grid item xs={12} sm={6} md={4}> 
+    <Grid >
         <CardActionArea component="div" onClick={onClick} sx={{ height: '100%', borderRadius: 3 }}>
             <Card sx={{
                 minHeight: 220,
@@ -37,7 +37,7 @@ const HomePage: React.FC = () => {
 
     return (
         <Container maxWidth="md">
-            <Box sx={{ textAlign: 'center', my: 6 }}>
+            <Box sx={{ textAlign: 'center', mb: 6 }}>
                 <Typography variant="h2" component="h1" gutterBottom>
                     📖 Book Management System
                 </Typography>
@@ -48,7 +48,7 @@ const HomePage: React.FC = () => {
             <Grid container spacing={4} justifyContent="center">
                 <MenuCard icon={faPlusCircle} text="Add New Book" onClick={() => navigate('/add')} />
                 <MenuCard icon={faBookOpen} text="View All Books" onClick={() => navigate('/view')} />
-                <MenuCard icon={faListCheck} text="Manage Books" onClick={() => navigate('/delete')} />
+                <MenuCard icon={faTrashAlt} text="Delete a Book" onClick={() => navigate('/delete')} />
             </Grid>
         </Container>
     );

@@ -1,3 +1,4 @@
+// src/pages/ViewBooksPage.tsx
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Book } from '../types';
@@ -7,19 +8,17 @@ import { bookService } from '../services/bookService';
 import { Button, TextField, Select, MenuItem, FormControl, InputLabel, Container, Typography, CircularProgress, Alert, Box } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// highlight-next-line
 import ChromaGridBookList from '../components/ChromaGridBookList';
 
 const ViewBooksPage: React.FC<{
   books: Book[];
-  onBooksFetched: (books: Book[]) => void;
-}> = ({ books, onBooksFetched }) => {
+  reloadBooks: () => Promise<void>; // Prop to tell parent to re-fetch
+}> = ({ books, reloadBooks }) => {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // The selectedBookId state is no longer needed here
 
   const filteredBooks = useMemo(() => {
     return books
@@ -28,7 +27,7 @@ const ViewBooksPage: React.FC<{
          book.author.toLowerCase().includes(search.toLowerCase())) &&
         (filter ? book.genre === filter : true)
       )
-      .sort((a, b) => a.title.localeCompare(b.title));
+      .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()); // Sort by most recent
   }, [books, search, filter]);
 
   const handleEdit = (bookId: string) => {
@@ -40,7 +39,14 @@ const ViewBooksPage: React.FC<{
     setError(null);
     try {
       const fetchedBooks = await bookService.fetchBooksFromApi();
-      onBooksFetched(fetchedBooks);
+      if (fetchedBooks.length > 0) {
+        // Add each fetched book to our database via the service
+        for (const book of fetchedBooks) {
+            // We don't need to await each one if we don't care about sequential adding
+            bookService.addBook(book);
+        }
+        await reloadBooks(); // After adding, reload the main list
+      }
     } catch (err: any) {
       logger.error("Failed to fetch books from API", err);
       setError(err.message);
@@ -51,7 +57,6 @@ const ViewBooksPage: React.FC<{
 
   return (
     <Container maxWidth="lg">
-      {/* The background overlay Box is no longer needed here */}
       <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
         Back
       </Button>
@@ -59,7 +64,7 @@ const ViewBooksPage: React.FC<{
         Book List
       </Typography>
 
-      <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', gap: 2, mb: 4, justifyContent: 'center', flexWrap: 'wrap' }}>
         <TextField
           label="Search by title or author"
           variant="outlined"
@@ -69,38 +74,22 @@ const ViewBooksPage: React.FC<{
         />
         <FormControl variant="outlined" sx={{ minWidth: 150 }}>
           <InputLabel>Genre</InputLabel>
-          <Select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            label="Genre"
-          >
-            <MenuItem value="">
-              <em>All Genres</em>
-            </MenuItem>
-            {genres.map(g => (
-              <MenuItem key={g} value={g}>
-                {g.charAt(0).toUpperCase() + g.slice(1)}
-              </MenuItem>
-            ))}
+          <Select value={filter} onChange={e => setFilter(e.target.value)} label="Genre">
+            <MenuItem value=""><em>All Genres</em></MenuItem>
+            {genres.map(g => ( <MenuItem key={g} value={g}>{g.charAt(0).toUpperCase() + g.slice(1)}</MenuItem>))}
           </Select>
         </FormControl>
         <Button onClick={fetchFromApi} variant="contained" disabled={isLoading}>
-          {isLoading ? <CircularProgress size={24} /> : 'Fetch from API'}
+          {isLoading ? <CircularProgress size={24} /> : 'Fetch New Books'}
         </Button>
       </Box>
 
       {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
 
-      {/* Replaced BookList with ChromaGridBookList */}
-      {/* highlight-start */}
       <ChromaGridBookList
         books={filteredBooks}
         renderActions={(book) => (
-            <Button
-                size="small"
-                onClick={() => handleEdit(book.id)}
-                startIcon={<EditIcon />}
-            >
+            <Button size="small" onClick={() => handleEdit(book.id)} startIcon={<EditIcon />}>
                 Edit
             </Button>
         )}

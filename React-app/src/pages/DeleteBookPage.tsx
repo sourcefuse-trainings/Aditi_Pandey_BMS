@@ -1,22 +1,21 @@
+// src/pages/DeleteBookPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Book } from '../types';
 import { Button, Container, Typography, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Box } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// highlight-next-line
 import ChromaGridBookList from '../components/ChromaGridBookList';
 
 interface DeleteBookPageProps {
   books: Book[];
-  deleteBook: (id: string) => void;
+  deleteBook: (id: string) => Promise<void>; // Prop is now async
 }
 
 const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) => {
   const navigate = useNavigate();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState<Book | null>(null);
-  // The selectedBookId state is no longer needed here
 
   const handleClickOpen = (book: Book) => {
     setBookToDelete(book);
@@ -28,19 +27,18 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
     setBookToDelete(null);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => { // Function is now async
     if (bookToDelete) {
-      deleteBook(bookToDelete.id);
+      await deleteBook(bookToDelete.id); // Await the deletion
     }
     handleClose();
   };
 
   return (
     <Container maxWidth="lg">
-      {/* The background overlay Box is no longer needed here */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 4 }}>
         <Button onClick={() => navigate('/')} startIcon={<ArrowBackIcon />}>
-          Back
+          Back to Home
         </Button>
       </Box>
       <Box sx={{ textAlign: 'center', mb: 4 }}>
@@ -52,8 +50,6 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
         </Typography>
       </Box>
 
-      {/* Replaced BookList with ChromaGridBookList */}
-      {/* highlight-start */}
       <ChromaGridBookList
         books={books}
         renderActions={(book) => (
@@ -69,12 +65,7 @@ const DeleteBookPage: React.FC<DeleteBookPageProps> = ({ books, deleteBook }) =>
       />
       {/* highlight-end */}
       
-      <Dialog 
-        open={dialogOpen} 
-        onClose={handleClose}
-        // zIndex ensures the dialog appears over the expanded card
-        sx={{ zIndex: 1500 }}
-      >
+      <Dialog open={dialogOpen} onClose={handleClose} sx={{ zIndex: 1500 }}>
         <DialogTitle>Confirm Deletion</DialogTitle>
         <DialogContent>
           <DialogContentText>

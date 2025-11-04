@@ -1,136 +1,146 @@
+// src/services/bookService.ts
 import { v4 as uuidv4 } from 'uuid';
 import type { Book } from '../types';
 import { logger } from '../utils/logger';
 
-// Initial data to populate if localStorage is empty
-const initialBooks: Book[] = [
-    { id: '1', title: 'The Great Gatsby', author: 'F. Scott Fitzgerald', isbn: '9780743273565', pubDate: '1925-04-10', genre: 'fiction' },
-    { id: '2', title: 'A Brief History of Time', author: 'Stephen Hawking', isbn: '9780553380163', pubDate: '1988-03-01', genre: 'science' }
-];
-
-const BOOKS_STORAGE_KEY = 'books';
+// URL of your running backend server
+const API_BASE_URL = 'http://localhost:4000/api'; 
 
 /**
- * Saves the list of books to localStorage.
- * @param books - The array of books to save.
- */
-const saveBooks = (books: Book[]): void => {
-    localStorage.setItem(BOOKS_STORAGE_KEY, JSON.stringify(books));
-    logger.info(`${books.length} books saved to localStorage.`);
-};
-
-/**
- * BookService encapsulates all business logic for book operations.
+ * BookService encapsulates all business logic for book operations
+ * by calling the backend API.
  */
 export const bookService = {
     /**
-     * Retrieves all books from localStorage.
-     * If no books are found, it initializes with default data.
-     * @returns An array of books.
+     * Retrieves all books from the database via the API.
+     * @returns A promise that resolves to an array of books.
      */
-    getBooks(): Book[] {
+    async getBooks(): Promise<Book[]> {
         try {
-            const savedBooks = localStorage.getItem(BOOKS_STORAGE_KEY);
-            return savedBooks ? JSON.parse(savedBooks) : initialBooks;
+            const response = await fetch(`${API_BASE_URL}/books`);
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+            }
+            const books: Book[] = await response.json();
+            logger.info(`Fetched ${books.length} books from API.`);
+            // Convert pubDate from DB (YYYY-MM-DD) if needed, though string is fine
+            return books;
         } catch (error) {
-            logger.error("Failed to parse books from localStorage", error);
-            return initialBooks;
+            logger.error("Failed to fetch books", error);
+            return []; // Return empty array on error
         }
     },
 
     /**
-     * Adds a new book to the list and saves it.
+     * Adds a new book to the database via the API.
      * @param book - The book object to add.
-     * @returns The updated array of books.
+     * @returns A promise that resolves to the newly added book.
      */
-    addBook(book: Omit<Book, 'id'>): Book[] {
-        const currentBooks = this.getBooks();
-        const newBook = { ...book, id: uuidv4() };
-        const updatedBooks = [...currentBooks, newBook];
-        saveBooks(updatedBooks);
-        logger.success(`Book added: "${newBook.title}"`);
-        return updatedBooks;
-    },
-
-    /**
-     * Updates an existing book in the list and saves the changes.
-     * @param updatedBook - The book with updated information.
-     * @returns The updated array of books.
-     */
-    updateBook(updatedBook: Book): Book[] {
-        let currentBooks = this.getBooks();
-        const updatedBooks = currentBooks.map(book => 
-            book.id === updatedBook.id ? updatedBook : book
-        );
-        saveBooks(updatedBooks);
-        logger.success(`Book updated: "${updatedBook.title}"`);
-        return updatedBooks;
-    },
-
-    /**
-     * Deletes a book by its ID.
-     * @param id - The ID of the book to delete.
-     * @returns The updated array of books.
-     */
-    deleteBook(id: string): Book[] | null {
-        let currentBooks = this.getBooks();
-        const bookToDelete = currentBooks.find(b => b.id === id);
-        if (bookToDelete) {
-            const updatedBooks = currentBooks.filter(book => book.id !== id);
-            saveBooks(updatedBooks);
-            logger.info(`Book deleted: "${bookToDelete.title}"`);
-            return updatedBooks;
+    async addBook(book: Omit<Book, 'id'>): Promise<Book | null> {
+        try {
+            const response = await fetch(`${API_BASE_URL}/books`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(book),
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+            }
+            const newBook: Book = await response.json();
+            logger.success(`Book added: "${newBook.title}"`);
+            return newBook;
+        } catch (error) {
+            logger.error('Failed to add book', error);
+            alert(`Error: ${error.message}`); // Show user-facing error
+            return null;
         }
-        return null; // Return null if deletion was cancelled
     },
 
     /**
-     * Fetches a list of books from an external API.
+     * Updates an existing book in the database via the API.
+     * @param updatedBook - The book with updated information.
+     * @returns A promise that resolves to the updated book.
+     */
+    async updateBook(updatedBook: Book): Promise<Book | null> {
+        try {
+            const response = await fetch(`${API_BASE_URL}/books/${updatedBook.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedBook),
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+            }
+            const returnedBook: Book = await response.json();
+            logger.success(`Book updated: "${returnedBook.title}"`);
+            return returnedBook;
+        } catch (error) {
+            logger.error('Failed to update book', error);
+            alert(`Error: ${error.message}`); // Show user-facing error
+            return null;
+        }
+    },
+
+    /**
+     * Deletes a book by its ID from the database via the API.
+     * @param id - The ID of the book to delete.
+     * @returns A promise that resolves to true if deletion was successful.
+     */
+    async deleteBook(id: string): Promise<boolean> {
+        try {
+            const response = await fetch(`${API_BASE_URL}/books/${id}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                const err = await response.json();
+                throw new Error(err.message || `HTTP error! Status: ${response.status}`);
+            }
+            logger.info(`Book deleted: ${id}`);
+            return true;
+        } catch (error) {
+            logger.error('Failed to delete book', error);
+            alert(`Error: ${error.message}`); // Show user-facing error
+            return false;
+        }
+    },
+
+    /**
+     * Fetches a list of books from the external JSONPlaceholder API.
+     * (This logic remains the same as your original)
      * @returns A promise that resolves to an array of new books.
      */
     async fetchBooksFromApi(): Promise<Book[]> {
-    logger.info("Fetching books from API...");
+        logger.info("Fetching books from external API...");
+        const randomStart = Math.floor(Math.random() * (100 - 3));
+        const url = `https://jsonplaceholder.typicode.com/posts?_start=${randomStart}&_limit=3`;
 
-    const randomStart = Math.floor(Math.random() * (100 - 3)); // 100 posts total
-    const url = `https://jsonplaceholder.typicode.com/posts?_start=${randomStart}&_limit=3`;
-
-    const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    return data.map((post: any) => ({
-        id: uuidv4(),
-        title: post.title
-            .split(" ")
-            .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" "),
-        author: `User ${post.userId}`,
-        isbn: `1000-${post.id}`,
-        pubDate: "2023-05-10",
-        genre: "general",
-    }));
-},
-
-    /**
-     * Merges fetched books into the existing list, avoiding duplicates by title.
-     * @param existingBooks - The current list of books.
-     * @param fetchedBooks - The new books fetched from the API.
-     * @returns The merged list of books.
-     */
-    addFetchedBooks(existingBooks: Book[], fetchedBooks: Book[]): Book[] {
-        const newBooks = fetchedBooks.filter(
-            fetchedBook => !existingBooks.some(existingBook => existingBook.title === fetchedBook.title)
-        );
-        if (newBooks.length > 0) {
-            const updatedBooks = [...existingBooks, ...newBooks];
-            saveBooks(updatedBooks);
-            logger.success(`Added ${newBooks.length} new books from API.`);
-            return updatedBooks;
+        const response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        logger.info("No new books to add from the API fetch.");
-        return existingBooks;
-    }
+        const data = await response.json();
+
+        return data.map((post: any) => ({
+            id: uuidv4(), // We give it a temp ID
+            title: post.title
+                .split(" ")
+                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" "),
+            author: `User ${post.userId}`,
+            isbn: `1000-${post.id}`, // Placeholder ISBN
+            pubDate: "2023-05-10", // Placeholder date
+            genre: "general",
+        }));
+    },
+    
+    /**
+     * This function should now be handled in your React component.
+     * The component should call `fetchBooksFromApi()`, then loop through the results
+     * and call `addBook(book)` for each one, updating the state as the
+     * books are added.
+     */
+    // addFetchedBooks(...) is removed as its logic moves to the UI layer
 };
